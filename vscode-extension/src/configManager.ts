@@ -160,20 +160,35 @@ export class ConfigManager {
 
         // 获取 prompts 目录路径
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        const config = vscode.workspace.getConfiguration('copilotPrompts');
-        const promptsPath = config.get<string>('promptsPath') || '../copilot-prompts';
-        
-        let promptsDir: string;
-        if (workspaceFolder) {
-            promptsDir = path.resolve(workspaceFolder.uri.fsPath, promptsPath);
-        } else {
-            // 如果没有工作区，使用绝对路径
-            promptsDir = '/Users/pailasi/Work/copilot-prompts';
+        if (!workspaceFolder) {
+            throw new Error('请先打开一个工作区');
         }
 
-        // 检查目录是否存在
-        if (!fs.existsSync(promptsDir)) {
-            throw new Error(`Prompts 目录不存在: ${promptsDir}`);
+        const config = vscode.workspace.getConfiguration('copilotPrompts');
+        const configuredPath = config.get<string>('promptsPath');
+        
+        // 智能查找 prompts 目录
+        const possiblePaths = [
+            configuredPath ? path.resolve(workspaceFolder.uri.fsPath, configuredPath) : null,
+            path.join(workspaceFolder.uri.fsPath, 'copilot-prompts'),
+            path.resolve(workspaceFolder.uri.fsPath, '../copilot-prompts'),
+            workspaceFolder.uri.fsPath  // 当前目录本身（如果包含 agents/common 等）
+        ].filter(Boolean) as string[];
+
+        let promptsDir: string | undefined;
+        for (const testPath of possiblePaths) {
+            if (fs.existsSync(testPath) && (
+                fs.existsSync(path.join(testPath, 'agents')) ||
+                fs.existsSync(path.join(testPath, 'common')) ||
+                fs.existsSync(path.join(testPath, 'industry'))
+            )) {
+                promptsDir = testPath;
+                break;
+            }
+        }
+
+        if (!promptsDir) {
+            throw new Error(`找不到 Prompts 目录。已尝试:\n${possiblePaths.join('\n')}`);
         }
 
         // 生成配置内容
@@ -237,27 +252,30 @@ export class ConfigManager {
 
         // 获取 prompts 目录路径
         const config = vscode.workspace.getConfiguration('copilotPrompts');
-        const promptsPath = config.get<string>('promptsPath') || '../copilot-prompts';
-        const promptsDir = path.resolve(workspaceFolder.uri.fsPath, promptsPath);
+        const configuredPath = config.get<string>('promptsPath');
+        
+        // 智能查找 prompts 目录
+        const possiblePaths = [
+            configuredPath ? path.resolve(workspaceFolder.uri.fsPath, configuredPath) : null,
+            path.join(workspaceFolder.uri.fsPath, 'copilot-prompts'),
+            path.resolve(workspaceFolder.uri.fsPath, '../copilot-prompts'),
+            workspaceFolder.uri.fsPath  // 当前目录本身
+        ].filter(Boolean) as string[];
 
-        // 检查目录是否存在
-        if (!fs.existsSync(promptsDir)) {
-            const createLink = await vscode.window.showWarningMessage(
-                `Prompts 目录不存在: ${promptsPath}`,
-                '创建符号链接',
-                '取消'
-            );
-            
-            if (createLink === '创建符号链接') {
-                const githubDir = path.join(workspaceFolder.uri.fsPath, '.github');
-                if (!fs.existsSync(githubDir)) {
-                    fs.mkdirSync(githubDir, { recursive: true });
-                }
-                const linkPath = path.join(githubDir, 'prompts');
-                fs.symlinkSync(promptsDir, linkPath, 'dir');
-            } else {
-                throw new Error('取消操作');
+        let promptsDir: string | undefined;
+        for (const testPath of possiblePaths) {
+            if (fs.existsSync(testPath) && (
+                fs.existsSync(path.join(testPath, 'agents')) ||
+                fs.existsSync(path.join(testPath, 'common')) ||
+                fs.existsSync(path.join(testPath, 'industry'))
+            )) {
+                promptsDir = testPath;
+                break;
             }
+        }
+
+        if (!promptsDir) {
+            throw new Error(`找不到 Prompts 目录。已尝试:\n${possiblePaths.join('\n')}`);
         }
 
         // 生成配置内容
