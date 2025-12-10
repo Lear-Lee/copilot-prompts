@@ -28,40 +28,45 @@ copilot-prompts/
 
 ## 🚀 使用方式
 
-### 方法 1: 直接复制到项目
+### 方法 1: 符号链接 (本地开发，推荐)
 
 ```bash
 # 复制特定 prompt 到项目
-cp copilot-prompts/vue/vue3-typescript.md your-project/.github/copilot-instructions.md
+cd your-project
+ln -s /path/to/copilot-prompts .github/prompts
+ln -s prompts/vue/vue3-typescript.md .github/copilot-instructions.md
 ```
 
-### 方法 2: Git Submodule (推荐)
+**优点**: 修改 prompts 立即生效，无需同步
+
+### 方法 2: Git Submodule (团队协作，推荐)
 
 ```bash
 # 在项目中添加为子模块
 cd your-project
 git submodule add https://github.com/ForLear/copilot-prompts.git .github/prompts
 
-# 创建符号链接
+# 创建符号链接到具体 prompt
 ln -s prompts/vue/vue3-typescript.md .github/copilot-instructions.md
+
+# 团队成员初次克隆后需要初始化子模块
+git submodule update --init
+
+# 更新到最新版本
+cd .github/prompts
+git pull origin main
 ```
 
-### 方法 3: MCP 集成 (VS Code)
+**优点**: 版本化管理，团队统一规范
 
-在 VS Code 的 MCP 配置中引用：
+### 方法 3: 直接复制 (简单项目)
 
-```json
-{
-  "mcpServers": {
-    "github": {
-      "prompts": {
-        "vue3": "github:ForLear/copilot-prompts/vue/vue3-typescript.md",
-        "vitasage": "github:ForLear/copilot-prompts/industry/vitasage-recipe.md"
-      }
-    }
-  }
-}
+```bash
+# 复制特定 prompt 到项目
+cp /path/to/copilot-prompts/vue/vue3-typescript.md your-project/.github/copilot-instructions.md
 ```
+
+**优点**: 简单直接，但需要手动同步更新
 
 ## 📝 prompt 编写规范
 
