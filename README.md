@@ -87,5 +87,7 @@ cp /path/to/copilot-prompts/vue/vue3-typescript.md your-project/.github/copilot-
 
 ## 📚 相关资源
 
+- **最佳实践指南**: [BEST_PRACTICES.md](./BEST_PRACTICES.md) - 详细的使用方案对比和建议
+- **配置完成说明**: [SETUP_COMPLETE.md](./SETUP_COMPLETE.md) - 初次设置指南
 - [GitHub Copilot 文档](https://docs.github.com/en/copilot)
 - [VS Code MCP 指南](https://aka.ms/vscode-instructions-docs)
