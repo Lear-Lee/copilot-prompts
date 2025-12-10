@@ -46,7 +46,13 @@
     "commands": [
       {
         "command": "copilotPrompts.applyConfig",
-        "title": "应用选中的配置",
+        "title": "应用选中的配置 (项目)",
+        "category": "Copilot Prompts",
+        "icon": "$(check)"
+      },
+      {
+        "command": "copilotPrompts.applyGlobal",
+        "title": "应用选中的配置 (全局)",
         "category": "Copilot Prompts",
         "icon": "$(check)"
       },
@@ -98,6 +104,11 @@
           "command": "copilotPrompts.applyConfig",
           "when": "view == copilotPromptsTree",
           "group": "navigation@1"
+        },
+        {
+          "command": "copilotPrompts.applyGlobal",
+          "when": "view == copilotPromptsTree",
+          "group": "navigation@2"
         },
         {
           "command": "copilotPrompts.refresh",

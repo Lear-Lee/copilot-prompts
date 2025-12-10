@@ -53,6 +53,30 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // 应用到全局
+    const applyGlobal = vscode.commands.registerCommand('copilotPrompts.applyGlobal', async () => {
+        try {
+            const result = await configManager.applyGlobal();
+            if (result.success) {
+                const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
+                vscode.window.showInformationMessage(
+                    `✅ 全局配置已应用！共 ${result.count} 个 Prompt`,
+                    '查看位置',
+                    '重新加载'
+                ).then(selection => {
+                    if (selection === '查看位置') {
+                        vscode.window.showInformationMessage(`配置位置: ${homeDir}/.vscode/copilot-instructions.md`);
+                    } else if (selection === '重新加载') {
+                        vscode.commands.executeCommand('workbench.action.reloadWindow');
+                    }
+                });
+                updateStatusBar();
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`应用全局配置失败: ${error}`);
+        }
+    });
+
     // 刷新
     const refresh = vscode.commands.registerCommand('copilotPrompts.refresh', () => {
         promptsProvider.refresh();
@@ -184,6 +208,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         treeView,
         applyConfig,
+        applyGlobal,
         refresh,
         selectAll,
         clearAll,

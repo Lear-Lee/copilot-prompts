@@ -150,6 +150,78 @@ export class ConfigManager {
         this.context.workspaceState.update(this.STORAGE_KEY, this.getSelectedPrompts());
     }
 
+    async applyGlobal(): Promise<{ success: boolean; count: number }> {
+        const selected = this.getSelectedPrompts();
+        if (selected.length === 0) {
+            throw new Error('请至少选择一个配置');
+        }
+
+        const selectedPrompts = this.prompts.filter(p => selected.includes(p.id));
+
+        // 获取 prompts 目录路径
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        const config = vscode.workspace.getConfiguration('copilotPrompts');
+        const promptsPath = config.get<string>('promptsPath') || '../copilot-prompts';
+        
+        let promptsDir: string;
+        if (workspaceFolder) {
+            promptsDir = path.resolve(workspaceFolder.uri.fsPath, promptsPath);
+        } else {
+            // 如果没有工作区，使用绝对路径
+            promptsDir = '/Users/pailasi/Work/copilot-prompts';
+        }
+
+        // 检查目录是否存在
+        if (!fs.existsSync(promptsDir)) {
+            throw new Error(`Prompts 目录不存在: ${promptsDir}`);
+        }
+
+        // 生成配置内容
+        let content = '# AI 开发指南 (全局配置)\n\n';
+        content += '> 本文件自动生成，仅在本机生效，不会提交到 Git\n\n';
+        content += '---\n\n';
+
+        for (const prompt of selectedPrompts) {
+            const filePath = path.join(promptsDir, prompt.path);
+            if (fs.existsSync(filePath)) {
+                content += `---\n\n`;
+                content += `<!-- Source: ${prompt.path} -->\n\n`;
+                content += fs.readFileSync(filePath, 'utf-8');
+                content += '\n\n';
+            }
+        }
+
+        content += '---\n\n';
+        content += '## 📋 应用的 Prompt 列表\n\n';
+        for (const prompt of selectedPrompts) {
+            content += `- **${prompt.title}** (${prompt.path})\n`;
+            content += `  - ${prompt.description}\n`;
+            content += `  - 标签: ${prompt.tags.join(', ')}\n`;
+        }
+
+        const now = new Date();
+        content += `\n生成时间: ${now.toLocaleString('zh-CN')}\n`;
+        content += `配置范围: 全局 (用户级)\n`;
+
+        // 写入全局配置文件
+        const globalConfigDir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.vscode');
+        if (!fs.existsSync(globalConfigDir)) {
+            fs.mkdirSync(globalConfigDir, { recursive: true });
+        }
+
+        const globalConfigPath = path.join(globalConfigDir, 'copilot-instructions.md');
+        
+        // 备份旧文件
+        if (fs.existsSync(globalConfigPath)) {
+            const backupPath = `${globalConfigPath}.backup.${Date.now()}`;
+            fs.copyFileSync(globalConfigPath, backupPath);
+        }
+
+        fs.writeFileSync(globalConfigPath, content, 'utf-8');
+
+        return { success: true, count: selectedPrompts.length };
+    }
+
     async applyConfig(): Promise<{ success: boolean; count: number }> {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
