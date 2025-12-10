@@ -21,9 +21,14 @@ copilot-prompts/
 │   ├── api-design.md             # RESTful API 设计
 │   ├── error-handling.md         # 错误处理规范
 │   └── i18n.md                   # 国际化最佳实践
-└── industry/
-    ├── vitasage-recipe.md        # VitaSage 工业配方系统
-    └── fintech-payment.md        # 金融支付系统
+├── industry/
+│   ├── vitasage-recipe.md        # VitaSage 工业配方系统
+│   └── fintech-payment.md        # 金融支付系统
+└── agents/                        # VS Code Custom Agents 配置
+    ├── vitasage.agent.md         # VitaSage 专用 agent
+    ├── vue3.agent.md             # Vue 3 通用 agent
+    ├── typescript.agent.md       # TypeScript 严格模式 agent
+    └── i18n.agent.md             # 国际化 agent
 ```
 
 ## 🚀 使用方式
@@ -61,7 +66,33 @@ git pull origin main
 
 ### 方法 3: 直接复制 (简单项目)
 
+**优点**: 简单直接，但需要手动同步更新
+
+### 方法 4: Custom Agents (VS Code 专用，推荐)
+
 ```bash
+# 一键同步所有 agents 到项目
+cd /path/to/copilot-prompts
+./sync-agents.sh /path/to/your-project
+
+# 或手动复制
+cp agents/*.agent.md your-project/.github/agents/
+```
+
+**使用方式**:
+```
+# 在 VS Code Copilot Chat 中
+@vitasage 创建一个 CRUD 页面
+@vue3 生成一个表单组件
+@typescript 定义 API 响应类型
+@i18n 重构这段代码使其支持国际化
+```
+
+**优点**: 
+- ✅ 精准的上下文控制
+- ✅ 按需选择规范
+- ✅ 便于团队协作
+- ✅ 一键更新维护
 # 复制特定 prompt 到项目
 cp /path/to/copilot-prompts/vue/vue3-typescript.md your-project/.github/copilot-instructions.md
 ```
