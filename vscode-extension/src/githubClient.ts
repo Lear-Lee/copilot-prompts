@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface GitHubPromptData {
     id: string;
@@ -25,13 +27,31 @@ export class GitHubClient {
         branch: 'main'
     };
 
+    // 本地仓库路径（作为备选）
+    private readonly localRepoPath: string | null = null;
+
     private cache: Map<string, { data: any; timestamp: number }> = new Map();
     private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 分钟缓存
 
-    constructor(private outputChannel?: vscode.OutputChannel) {}
+    constructor(private outputChannel?: vscode.OutputChannel) {
+        // 尝试检测本地 copilot-prompts 仓库
+        const possiblePaths = [
+            path.join(process.env.HOME || '', 'Work', 'copilot-prompts'),
+            path.join(process.env.HOME || '', 'Documents', 'copilot-prompts'),
+            path.join(process.env.HOME || '', 'Projects', 'copilot-prompts'),
+        ];
+
+        for (const repoPath of possiblePaths) {
+            if (fs.existsSync(repoPath) && fs.existsSync(path.join(repoPath, 'agents'))) {
+                (this as any).localRepoPath = repoPath;
+                this.log(`检测到本地仓库: ${repoPath}`);
+                break;
+            }
+        }
+    }
 
     /**
-     * 从 GitHub 获取配置列表
+     * 从 GitHub 或本地获取配置列表
      */
     async fetchPromptsList(config?: Partial<GitHubConfig>): Promise<GitHubPromptData[]> {
         const fullConfig = { ...this.defaultConfig, ...config };
@@ -44,6 +64,22 @@ export class GitHubClient {
             return cached;
         }
 
+        // 优先尝试从本地读取
+        if (this.localRepoPath) {
+            try {
+                this.log('从本地仓库读取配置列表...');
+                const localPrompts = await this.fetchPromptsFromLocal();
+                if (localPrompts.length > 0) {
+                    this.setCache(cacheKey, localPrompts);
+                    this.log(`✅ 从本地获取 ${localPrompts.length} 个配置`);
+                    return localPrompts;
+                }
+            } catch (error) {
+                this.log(`本地读取失败: ${error}`, true);
+            }
+        }
+
+        // 降级到 GitHub API
         try {
             this.log('从 GitHub 获取配置列表...');
             
@@ -65,7 +101,7 @@ export class GitHubClient {
     }
 
     /**
-     * 获取单个文件内容
+     * 获取单个文件内容（优先从本地，降级到 GitHub）
      */
     async fetchFileContent(filePath: string, config?: Partial<GitHubConfig>): Promise<string> {
         const fullConfig = { ...this.defaultConfig, ...config };
@@ -76,9 +112,25 @@ export class GitHubClient {
             return cached;
         }
 
+        // 优先从本地读取
+        if (this.localRepoPath) {
+            try {
+                const localFilePath = path.join(this.localRepoPath, filePath);
+                if (fs.existsSync(localFilePath)) {
+                    this.log(`从本地读取文件: ${filePath}`);
+                    const content = fs.readFileSync(localFilePath, 'utf-8');
+                    this.setCache(cacheKey, content);
+                    return content;
+                }
+            } catch (error) {
+                this.log(`本地文件读取失败: ${filePath} - ${error}`, true);
+            }
+        }
+
+        // 降级到 GitHub
         try {
             const url = `https://raw.githubusercontent.com/${fullConfig.owner}/${fullConfig.repo}/${fullConfig.branch}/${filePath}`;
-            this.log(`获取文件: ${url}`);
+            this.log(`从 GitHub 获取文件: ${url}`);
 
             const response = await fetch(url);
             if (!response.ok) {
@@ -89,7 +141,7 @@ export class GitHubClient {
             this.setCache(cacheKey, content);
             return content;
         } catch (error) {
-            this.log(`获取文件失败: ${filePath} - ${error}`, true);
+            this.log(`GitHub 获取文件失败: ${filePath} - ${error}`, true);
             throw error;
         }
     }
@@ -445,6 +497,110 @@ export class GitHubClient {
                 default: false
             }
         ];
+    }
+
+    /**
+     * 从本地文件系统读取配置
+     */
+    private async fetchPromptsFromLocal(): Promise<GitHubPromptData[]> {
+        if (!this.localRepoPath) {
+            return [];
+        }
+
+        const prompts: GitHubPromptData[] = [];
+
+        // 读取 agents 目录
+        const agentsDir = path.join(this.localRepoPath, 'agents');
+        if (fs.existsSync(agentsDir)) {
+            const files = fs.readdirSync(agentsDir);
+            for (const file of files) {
+                if (file.endsWith('.md')) {
+                    const filePath = path.join(agentsDir, file);
+                    const metadata = await this.parseLocalFileMetadata(filePath, 'agent', 'agents', file);
+                    if (metadata) {
+                        prompts.push(metadata);
+                    }
+                }
+            }
+        }
+
+        // 读取 common, vue, industry 目录
+        const categories = ['common', 'vue', 'industry'];
+        for (const category of categories) {
+            const categoryDir = path.join(this.localRepoPath, category);
+            if (fs.existsSync(categoryDir)) {
+                const files = fs.readdirSync(categoryDir);
+                for (const file of files) {
+                    if (file.endsWith('.md')) {
+                        const filePath = path.join(categoryDir, file);
+                        const metadata = await this.parseLocalFileMetadata(filePath, 'prompt', category, file);
+                        if (metadata) {
+                            prompts.push(metadata);
+                        }
+                    }
+                }
+            }
+        }
+
+        return prompts;
+    }
+
+    /**
+     * 解析本地文件的元数据
+     */
+    private async parseLocalFileMetadata(
+        filePath: string,
+        type: 'agent' | 'prompt',
+        category: string,
+        fileName: string
+    ): Promise<GitHubPromptData | null> {
+        try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            const lines = content.split('\n');
+            
+            // 解析 frontmatter
+            let description = '';
+            let tools: string[] = [];
+            
+            if (lines[0] === '---') {
+                for (let i = 1; i < Math.min(lines.length, 20); i++) {
+                    if (lines[i] === '---') break;
+                    if (lines[i].startsWith('description:')) {
+                        description = lines[i].replace('description:', '').trim().replace(/['"]/g, '');
+                    }
+                }
+            }
+
+            // 从内容中提取标签
+            const tags: string[] = [];
+            if (content.includes('Vue 3') || content.includes('vue3')) tags.push('vue3');
+            if (content.includes('TypeScript')) tags.push('typescript');
+            if (content.includes('Element Plus')) tags.push('element-plus');
+            if (content.includes('i18n') || content.includes('国际化')) tags.push('i18n');
+
+            // 生成标题
+            let title = fileName.replace('.md', '').replace('.agent', ' Agent');
+            if (type === 'prompt') {
+                title = description || title;
+            }
+
+            const id = fileName.replace('.md', '').replace(/\./g, '-');
+            const relativePath = `${category}/${fileName}`;
+
+            return {
+                id,
+                type,
+                category,
+                title,
+                description: description || title,
+                path: relativePath,
+                tags,
+                default: type === 'agent' // agents 默认选中
+            };
+        } catch (error) {
+            this.log(`解析本地文件失败: ${filePath} - ${error}`, true);
+            return null;
+        }
     }
 
     /**

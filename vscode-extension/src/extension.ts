@@ -10,10 +10,23 @@ export function activate(context: vscode.ExtensionContext) {
     const outputChannel = vscode.window.createOutputChannel('Copilot Prompts Manager');
     outputChannel.appendLine('Copilot Prompts Manager v1.3.0 已启动');
     outputChannel.appendLine('配置源: GitHub (动态获取)');
+    outputChannel.appendLine('正在从 GitHub 获取最新配置列表...');
 
     const configManager = new ConfigManager(context, outputChannel);
     const promptsProvider = new PromptsProvider(configManager);
-    const configValidator = new ConfigValidator();
+    const configValidator = new ConfigValidator(configManager);
+
+    // 启动时自动刷新配置列表
+    (async () => {
+        try {
+            await configManager.refreshFromGitHub();
+            promptsProvider.refresh();
+            outputChannel.appendLine('✅ 配置列表已更新');
+        } catch (error) {
+            outputChannel.appendLine(`⚠️ 自动刷新失败: ${error}`);
+            outputChannel.appendLine('将使用本地缓存的配置');
+        }
+    })();
 
     // 注册 TreeView
     const treeView = vscode.window.createTreeView('copilotPromptsTree', {
@@ -29,21 +42,18 @@ export function activate(context: vscode.ExtensionContext) {
             if (promptItem.id && promptItem.contextValue === 'prompt') {
                 const isChecked = state === vscode.TreeItemCheckboxState.Checked;
                 const currentlySelected = configManager.getSelectedPrompts().includes(promptItem.id);
-                
+
                 // 只在状态变化时处理
                 if (isChecked !== currentlySelected) {
                     configManager.togglePrompt(promptItem.id);
                 }
             }
         }
-        
-        // 立即应用配置到当前项目
+
+        // 静默应用配置（无需用户感知）
         await configManager.applyConfig();
         promptsProvider.refresh();
         updateStatusBar();
-        
-        const count = configManager.getSelectedPrompts().length;
-        vscode.window.showInformationMessage(`✅ 配置已自动应用到当前项目 (${count} 个)`);
     });
 
     // 创建状态栏
@@ -60,41 +70,58 @@ export function activate(context: vscode.ExtensionContext) {
         const count = selected.length;
         const allPrompts = configManager.getAllPrompts();
         const activePrompts = allPrompts.filter(p => selected.includes(p.id));
-        const tooltip = activePrompts.length > 0 
-            ? `当前生效的配置:\n${activePrompts.map(p => `• ${p.title}`).join('\n')}`
-            : '未应用任何配置';
-        
-        statusBarItem.text = `$(file-code) Copilot: ${count}`;
+        const tooltip = activePrompts.length > 0
+            ? `生效中 (${count}):\n${activePrompts.map(p => `• ${p.title}`).join('\n')}`
+            : 'Copilot Prompts - 未选择配置';
+
+        statusBarItem.text = count > 0 ? `$(check) ${count}` : '$(circle-slash) 0';
         statusBarItem.tooltip = tooltip;
-        statusBarItem.tooltip = `已选择 ${count} 个配置\n点击查看详情`;
         statusBarItem.show();
     };
     updateStatusBar();
 
-    // 应用配置到当前项目
+    // 应用配置到当前项目（静默执行）
     const applyConfig = vscode.commands.registerCommand('copilotPrompts.applyConfig', async () => {
         try {
+            const selected = configManager.getSelectedPrompts();
+            if (selected.length === 0) {
+                const action = await vscode.window.showWarningMessage(
+                    '还没有选择任何配置',
+                    '去选择',
+                    '取消'
+                );
+                if (action === '去选择') {
+                    vscode.commands.executeCommand('copilotPromptsTree.focus');
+                }
+                return;
+            }
+
             const result = await configManager.applyConfig();
             if (result.success) {
-                vscode.window.showInformationMessage(
-                    `✅ 配置已应用到当前项目！共 ${result.count} 个 Prompt`,
-                    '查看'
-                ).then(selection => {
-                    if (selection === '查看') {
-                        vscode.commands.executeCommand('copilotPrompts.viewCurrent');
-                    }
-                });
+                // 静默应用，仅在状态栏显示
                 updateStatusBar();
+                outputChannel.appendLine(`✅ 配置已应用 (${result.count} 个)`);
+                vscode.window.showInformationMessage(`✅ 已应用 ${result.count} 个配置到当前项目`);
             }
         } catch (error) {
             vscode.window.showErrorMessage(`应用配置失败: ${error}`);
         }
     });
 
-    // 检查配置问题
+    // 智能检查配置（简化版）
     const checkIssues = vscode.commands.registerCommand('copilotPrompts.checkIssues', async () => {
+        outputChannel.appendLine('开始检查配置...');
         const issues = await configValidator.checkAll();
+        
+        if (issues.length === 0) {
+            vscode.window.showInformationMessage('✅ 配置检查通过，没有发现问题');
+            outputChannel.appendLine('✅ 检查完成：无问题');
+            return;
+        }
+        
+        // 使用 QuickPick 界面展示问题
         await configValidator.showResults(issues);
+        outputChannel.appendLine(`检查完成：发现 ${issues.length} 个问题`);
     });
 
     // 应用到全局（移除，改为只应用到当前项目）
@@ -103,13 +130,93 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('copilotPrompts.applyConfig');
     });
 
+    // 新命令：选择目标工作区并应用配置
+    const selectTarget = vscode.commands.registerCommand('copilotPrompts.selectTarget', async () => {
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders || folders.length === 0) {
+            vscode.window.showWarningMessage('请先打开一个工作区');
+            return;
+        }
+        const items = folders.map(f => ({ label: f.name, description: f.uri.fsPath, folder: f }));
+        const selected = await vscode.window.showQuickPick(items, {
+            title: '选择目标工作区',
+            placeHolder: '选择要应用配置的工作区'
+        });
+        if (selected) {
+            try {
+                const result = await configManager.applyConfigToWorkspace(selected.folder);
+                promptsProvider.refresh();
+                updateStatusBar();
+                vscode.window.showInformationMessage(`✅ 配置已应用到 ${selected.label} (${result.count} 个配置)`);
+                outputChannel.appendLine(`✅ 配置已应用到 ${selected.label}: ${result.count} 个`);
+            } catch (error) {
+                const errorMsg = error instanceof Error ? error.message : String(error);
+                vscode.window.showErrorMessage(`应用配置到 ${selected.label} 失败: ${errorMsg}`);
+                outputChannel.appendLine(`❌ 应用配置失败: ${errorMsg}`);
+            }
+        }
+    });
+
     // 刷新
     const refresh = vscode.commands.registerCommand('copilotPrompts.refresh', async () => {
-        outputChannel.appendLine('正在刷新配置...');
-        await configManager.refresh();
-        promptsProvider.refresh();
-        updateStatusBar();
-        vscode.window.showInformationMessage('✅ 已从 GitHub 刷新最新配置');
+        outputChannel.appendLine('正在从 GitHub 刷新配置列表...');
+        try {
+            await configManager.refreshFromGitHub();
+            promptsProvider.refresh();
+            updateStatusBar();
+            vscode.window.showInformationMessage('✅ 配置列表已更新');
+            outputChannel.appendLine('✅ 配置列表刷新成功');
+        } catch (error) {
+            vscode.window.showErrorMessage(`刷新失败: ${error instanceof Error ? error.message : String(error)}`);
+            outputChannel.appendLine(`❌ 刷新失败: ${error}`);
+        }
+    });
+
+    // 清空项目配置
+    const clearProjectConfig = vscode.commands.registerCommand('copilotPrompts.clearProjectConfig', async () => {
+        // 让用户选择要清空配置的项目
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            vscode.window.showErrorMessage('请先打开一个工作区');
+            return;
+        }
+
+        interface FolderQuickPick extends vscode.QuickPickItem {
+            folder: vscode.WorkspaceFolder;
+        }
+
+        const items: FolderQuickPick[] = workspaceFolders.map(folder => ({
+            label: `$(folder) ${folder.name}`,
+            description: folder.uri.fsPath,
+            folder: folder
+        }));
+
+        const selected = await vscode.window.showQuickPick(items, {
+            placeHolder: '选择要清空配置的项目',
+            title: '清空项目 Copilot 配置'
+        });
+
+        if (selected) {
+            const confirmation = await vscode.window.showWarningMessage(
+                `确定要清空 ${selected.folder.name} 的所有 Copilot 配置吗？`,
+                { modal: true, detail: '这将删除:\n• .github/copilot-instructions.md\n• .github/agents/ 目录\n\n此操作不可撤销！' },
+                '确认清空',
+                '取消'
+            );
+
+            if (confirmation === '确认清空') {
+                try {
+                    await configManager.clearProjectConfig(selected.folder);
+                    promptsProvider.refresh();
+                    vscode.window.showInformationMessage(`✅ 已清空 ${selected.folder.name} 的配置`);
+                    outputChannel.appendLine(`✅ 已清空项目配置: ${selected.folder.name}`);
+                } catch (error) {
+                    const errorMsg = error instanceof Error ? error.message : String(error);
+                    vscode.window.showErrorMessage(`清空配置失败: ${errorMsg}`);
+                    outputChannel.appendLine(`❌ 清空配置失败: ${errorMsg}`);
+                }
+            }
+        }
     });
 
     // 全选
@@ -118,8 +225,6 @@ export function activate(context: vscode.ExtensionContext) {
         await configManager.applyConfig();
         promptsProvider.refresh();
         updateStatusBar();
-        const count = configManager.getSelectedPrompts().length;
-        vscode.window.showInformationMessage(`✅ 已全选并应用到当前项目 (${count} 个)`);
     });
 
     // 清空
@@ -128,7 +233,6 @@ export function activate(context: vscode.ExtensionContext) {
         await configManager.applyConfig();
         promptsProvider.refresh();
         updateStatusBar();
-        vscode.window.showInformationMessage('✅ 已清空并应用配置');
     });
 
     // 切换单项（已弃用，由 checkbox 事件替代）
@@ -144,7 +248,7 @@ export function activate(context: vscode.ExtensionContext) {
             placeHolder: '输入关键词搜索标题、描述或标签...',
             value: ''
         });
-        
+
         if (searchText !== undefined) {
             if (searchText.trim()) {
                 promptsProvider.setSearchText(searchText);
@@ -161,7 +265,7 @@ export function activate(context: vscode.ExtensionContext) {
         const selected = configManager.getSelectedPrompts();
         const allPrompts = configManager.getAllPrompts();
         const activePrompts = allPrompts.filter(p => selected.includes(p.id));
-        
+
         if (activePrompts.length === 0) {
             vscode.window.showInformationMessage('ℹ️ 当前没有生效的配置');
             return;
@@ -278,6 +382,7 @@ export function activate(context: vscode.ExtensionContext) {
         checkIssues,
         applyGlobal,
         refresh,
+        clearProjectConfig,
         selectAll,
         clearAll,
         toggleItem,
@@ -285,7 +390,8 @@ export function activate(context: vscode.ExtensionContext) {
         showActive,
         viewCurrent,
         openManager,
-        loadTemplate
+        loadTemplate,
+        selectTarget
     );
 }
 
@@ -351,4 +457,4 @@ function getWebviewContent(configManager: ConfigManager): string {
 </html>`;
 }
 
-export function deactivate() {}
+export function deactivate() { }

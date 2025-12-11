@@ -14,6 +14,7 @@ fi
 
 # 2. 编译 TypeScript
 echo "🔨 编译 TypeScript..."
+npm run fetch:latest
 npm run compile
 
 if [ $? -ne 0 ]; then

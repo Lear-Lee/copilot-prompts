@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { ConfigManager } from './configManager';
 
 export interface FixAction {
     label: string;
@@ -20,9 +21,11 @@ export interface ValidationIssue {
 export class ConfigValidator {
     private workspaceFolders: readonly vscode.WorkspaceFolder[];
     private promptsRoot: string = '';
+    private configManager?: ConfigManager;
 
-    constructor() {
+    constructor(configManager?: ConfigManager) {
         this.workspaceFolders = vscode.workspace.workspaceFolders || [];
+        this.configManager = configManager;
         // 尝试定位 prompts 根目录
         this.locatePromptsRoot();
     }
@@ -307,9 +310,20 @@ export class ConfigValidator {
                     fixes: [
                         {
                             label: '立即配置',
-                            description: '为此项目应用选中的 Prompts',
+                            description: `为 ${folder.name} 应用选中的 Prompts`,
                             action: async () => {
-                                await vscode.commands.executeCommand('copilotPrompts.applyConfig');
+                                if (!this.configManager) {
+                                    vscode.window.showErrorMessage('配置管理器未初始化');
+                                    return;
+                                }
+                                
+                                try {
+                                    const result = await this.configManager.applyConfigToWorkspace(folder);
+                                    vscode.window.showInformationMessage(`✅ 配置已应用到 ${folder.name} (${result.count} 个配置)`);
+                                } catch (error) {
+                                    const errorMsg = error instanceof Error ? error.message : String(error);
+                                    vscode.window.showErrorMessage(`应用配置到 ${folder.name} 失败: ${errorMsg}`);
+                                }
                             }
                         },
                         {

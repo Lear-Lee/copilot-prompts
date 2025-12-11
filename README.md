@@ -1,223 +1,133 @@
 # Copilot Prompts 中央仓库
 
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/ForLear/copilot-prompts)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 集中管理各类项目的 AI 开发指令文件，用于 GitHub Copilot 和其他 AI 编程助手。
 
-## 🎨 可视化管理工具 (新功能!)
-
-```bash
-# 打开可视化管理界面
-open agent-manager.html
-```
-
-**功能特性:**
-- ✅ 可视化选择 Agents 和 Prompts
-- 🔍 搜索和分类过滤
-- 📦 一键生成应用脚本
-- 📊 实时统计信息
-- 💡 使用帮助和指南
-
-[查看详细使用指南 →](#-可视化管理工具使用)
-
-## 📁 仓库结构
+## 📁 项目结构
 
 ```
 copilot-prompts/
-├── agent-manager.html            # 🎨 可视化管理工具 (NEW!)
-├── vue/
-│   └── vue3-typescript.md        # Vue 3 + TypeScript 项目
-├── common/
-│   ├── typescript-strict.md      # TypeScript 严格模式
-│   └── i18n.md                   # 国际化最佳实践
-├── industry/
-│   └── vitasage-recipe.md        # VitaSage 工业配方系统
-└── agents/                        # VS Code Custom Agents
-    ├── vitasage.agent.md         # VitaSage 专用
-    ├── vue3.agent.md             # Vue 3 通用
-    ├── typescript.agent.md       # TypeScript 严格模式
-    └── i18n.agent.md             # 国际化
+├── agents/              # Custom Agents（VS Code 专用）
+│   ├── i18n.agent.md
+│   ├── typescript.agent.md
+│   ├── vitasage.agent.md
+│   ├── vue3.agent.md
+│   └── vscode-extension-dev.agent.md
+├── common/              # 通用开发规范
+│   ├── i18n.md
+│   └── typescript-strict.md
+├── vue/                 # Vue 相关配置
+│   └── vue3-typescript.md
+├── industry/            # 行业专用配置
+│   └── vitasage-recipe.md
+├── vscode-extension/    # VS Code 扩展插件
+│   └── ...
+├── tools/               # 辅助工具
+│   └── agent-manager.html
+├── docs/                # 文档
+│   ├── AGENTS_GUIDE.md
+│   ├── BEST_PRACTICES.md
+│   └── MANAGER_GUIDE.md
+└── README.md
 ```
 
-## 🚀 使用方式
+## 🚀 快速开始
 
-### 🎨 方法 1: 可视化管理工具 (最推荐!)
+### 方式 1: 使用 VS Code 扩展（推荐）
 
-```bash
-# 1. 打开管理界面
-cd /path/to/copilot-prompts
-open agent-manager.html
-
-# 2. 选择需要的 Agents 和 Prompts
-#    - 勾选 Agent/Prompt 卡片
-#    - 支持搜索和分类过滤
-
-### 方法 3: Git Submodule (团队协作)
-#    点击 "生成配置" 按钮
-
-# 4. 应用到项目
-cd your-project
-mv ~/Downloads/apply-prompts.sh ./
-chmod +x apply-prompts.sh
-./apply-prompts.sh
-
-# 5. 重新加载 VS Code
-#    Cmd+Shift+P → "Reload Window"
-```
-
-**优点**: 
-- ✅ 可视化选择，直观便捷
-- ✅ 自动生成应用脚本
-- ✅ 支持多项目复用
-- ✅ 实时预览选择结果
-**优点**: 版本化管理，团队统一规范
-
-### 方法 4: 直接复制 (简单项目)
-```bash
-**优点**: 简单直接，但需要手动同步更新
-
-### 方法 5: Custom Agents (VS Code 专用)prompts
-ln -s prompts/vue/vue3-typescript.md .github/copilot-instructions.md
-```
-
-**优点**: 修改 prompts 立即生效，无需同步
-
-### 方法 2: Git Submodule (团队协作，推荐)
-
-```bash
-# 在项目中添加为子模块
-cd your-project
-git submodule add https://github.com/ForLear/copilot-prompts.git .github/prompts
-
-# 创建符号链接到具体 prompt
-ln -s prompts/vue/vue3-typescript.md .github/copilot-instructions.md
-
-# 团队成员初次克隆后需要初始化子模块
-git submodule update --init
-
-# 更新到最新版本
-cd .github/prompts
-git pull origin main
-```
-
-**优点**: 版本化管理，团队统一规范
-
-### 方法 3: 直接复制 (简单项目)
-
-**优点**: 简单直接，但需要手动同步更新
-
-### 方法 4: Custom Agents (VS Code 专用，推荐)
-
-```bash
-# 一键同步所有 agents 到项目
-cd /path/to/copilot-prompts
-./sync-agents.sh /path/to/your-project
-
-# 或手动复制
-cp agents/*.agent.md your-project/.github/agents/
-```
-
-**使用方式**:
-```
-# 在 VS Code Copilot Chat 中
-@vitasage 创建一个 CRUD 页面
-@vue3 生成一个表单组件
-@typescript 定义 API 响应类型
-@i18n 重构这段代码使其支持国际化
-```
-
-**优点**: 
-- ✅ 精准的上下文控制
-- ✅ 按需选择规范
-- ✅ 便于团队协作
-- ✅ 一键更新维护
-
----
-
-## 🎨 可视化管理工具使用
-
-### 快速开始
-
-1. **打开管理界面**
+1. 安装插件：
    ```bash
-   open agent-manager.html
+   cd vscode-extension
+   npm install
+   npm run compile
+   vsce package
+   code --install-extension copilot-prompts-manager-*.vsix
    ```
 
-2. **选择 Prompts**
-   - 默认已选中推荐的 4 个 Agents
-   - 点击卡片上的复选框添加/移除
-   - 使用搜索框快速查找
-   - 通过侧边栏按分类浏览
+2. 使用插件：
+   - 打开 VS Code 侧边栏 "Copilot Prompts" 视图
+   - 勾选需要的 agents 和 prompts
+   - 点击"应用到项目"按钮
 
-3. **生成配置**
-   - 点击 "生成配置" 按钮
-   - 自动下载 `apply-prompts.sh` 脚本
+### 方式 2: 手动配置
 
-4. **应用到项目**
-   ```bash
-   # 复制脚本到项目
-   mv ~/Downloads/apply-prompts.sh your-project/
-   cd your-project
-   
-   # 添加执行权限
-   chmod +x apply-prompts.sh
-   
-   # 运行脚本
-   ./apply-prompts.sh
-   
-   # 重新加载 VS Code
-   # Cmd+Shift+P → "Reload Window"
-   ```
+复制配置文件到项目：
 
-### 界面功能
+```bash
+# 创建配置目录
+mkdir -p .github/agents
 
-- **统计卡片**: 显示总计/已选择/Agents/Prompts 数量
-- **分类筛选**: 全部/Agents/Prompts/行业/Vue/通用
-- **搜索功能**: 按名称/描述/标签搜索
-- **批量操作**: 全选/清空按钮
-- **使用帮助**: 详细的使用说明
+# 复制主配置（选择一个或多个）
+cp copilot-prompts/vue/vue3-typescript.md .github/copilot-instructions.md
 
-### 推荐配置
-
-**Vue 3 前端项目:**
-```
-✅ Vue 3 Agent
-✅ TypeScript Agent
-✅ i18n Agent
+# 复制 agents（可选，用于 @agent-name 调用）
+cp copilot-prompts/agents/*.agent.md .github/agents/
 ```
 
-**VitaSage 工业项目:**
-```
-✅ VitaSage Agent (包含完整规范)
-✅ TypeScript Agent
-✅ i18n Agent
-```
+## 📖 配置说明
 
-**全栈项目:**
-```
-✅ 所有 4 个 Agents
-✅ 相关 Prompts (按需)
+### Agents（Custom Agents）
 
-## 📝 prompt 编写规范
+放置在 `.github/agents/` 目录，使用 `@agent-name` 调用：
 
-每个 prompt 文件应包含：
+- `vitasage.agent.md` - VitaSage 工业配方系统专用
+- `vue3.agent.md` - Vue 3 + Composition API
+- `typescript.agent.md` - TypeScript 严格模式
+- `i18n.agent.md` - 国际化最佳实践
+- `vscode-extension-dev.agent.md` - VS Code 扩展开发
 
-1. **项目定位** - 简述技术栈和应用场景
-2. **核心原则** - 3-5 条最重要的开发原则
-3. **关键架构模式** - 项目特有的架构模式和约定
-4. **禁止模式** - 明确不允许的代码模式
-5. **代码审查清单** - 可执行的检查项
-6. **参考示例** - 指向代码库中的实际文件
+### Prompts（通用配置）
 
-## 🔄 更新策略
+放置在 `.github/copilot-instructions.md`，自动应用到所有对话：
 
-- 每次项目重构后同步更新对应的 prompt
-- 新项目类型创建新的分类目录
-- 定期 review 已有 prompts 的有效性
+- `vue/vue3-typescript.md` - Vue 3 项目配置
+- `common/typescript-strict.md` - TypeScript 严格模式
+- `common/i18n.md` - 国际化规范
+- `industry/vitasage-recipe.md` - VitaSage 专用配置
 
-## 📚 相关资源
+## 🛠️ VS Code 扩展功能
 
-- **🎨 可视化管理工具指南**: [MANAGER_GUIDE.md](./MANAGER_GUIDE.md) - 详细使用教程和案例
-- **最佳实践指南**: [BEST_PRACTICES.md](./BEST_PRACTICES.md) - 详细的使用方案对比和建议
-- **Agent 编写指南**: [AGENTS_GUIDE.md](./AGENTS_GUIDE.md) - 如何编写自定义 Agent
-- **配置完成说明**: [SETUP_COMPLETE.md](./SETUP_COMPLETE.md) - 初次设置指南
-- [GitHub Copilot 文档](https://docs.github.com/en/copilot)
-- [VS Code MCP 指南](https://aka.ms/vscode-instructions-docs)
+- ✅ 可视化选择配置
+- ✅ 一键应用到项目
+- ✅ 自动从 GitHub 获取最新配置
+- ✅ 支持多工作区
+- ✅ 配置验证和问题检查
+- ✅ 清空项目配置
+
+详见：[vscode-extension/README.md](vscode-extension/README.md)
+
+## 📚 文档
+
+- [Agents 使用指南](AGENTS_GUIDE.md)
+- [最佳实践](BEST_PRACTICES.md)
+- [配置管理器使用](MANAGER_GUIDE.md)
+- [VS Code 扩展文档](vscode-extension/README.md)
+
+## 🤝 贡献
+
+欢迎贡献新的 agents 和 prompts！
+
+1. Fork 本仓库
+2. 创建你的分支 (`git checkout -b feature/my-agent`)
+3. 提交变更 (`git commit -am 'Add some agent'`)
+4. 推送到分支 (`git push origin feature/my-agent`)
+5. 创建 Pull Request
+
+### 贡献规范
+
+- Agents 文件命名：`xxx.agent.md`
+- Prompts 文件命名：`xxx.md`
+- 必须包含 YAML frontmatter（description, tools 等）
+- 内容清晰、示例完整
+
+## 📄 许可
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 🔗 相关链接
+
+- [GitHub 仓库](https://github.com/ForLear/copilot-prompts)
+- [问题反馈](https://github.com/ForLear/copilot-prompts/issues)
+- [更新日志](vscode-extension/CHANGELOG.md)

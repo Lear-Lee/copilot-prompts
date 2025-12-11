@@ -46,9 +46,15 @@
     "commands": [
       {
         "command": "copilotPrompts.applyConfig",
-        "title": "应用选中的配置 (项目)",
+        "title": "应用到项目",
         "category": "Copilot Prompts",
-        "icon": "$(check)"
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "copilotPrompts.clearProjectConfig",
+        "title": "清空项目配置",
+        "category": "Copilot Prompts",
+        "icon": "$(trash)"
       },
       {
         "command": "copilotPrompts.checkIssues",
@@ -58,9 +64,9 @@
       },
       {
         "command": "copilotPrompts.refresh",
-        "title": "刷新",
+        "title": "刷新配置列表",
         "category": "Copilot Prompts",
-        "icon": "$(refresh)"
+        "icon": "$(sync)"
       },
       {
         "command": "copilotPrompts.selectAll",
@@ -113,19 +119,34 @@
     "menus": {
       "view/title": [
         {
-          "command": "copilotPrompts.checkIssues",
+          "command": "copilotPrompts.applyConfig",
+          "when": "view == copilotPromptsTree",
+          "group": "navigation@0"
+        },
+        {
+          "command": "copilotPrompts.selectTarget",
           "when": "view == copilotPromptsTree",
           "group": "navigation@1"
         },
         {
-          "command": "copilotPrompts.search",
+          "command": "copilotPrompts.clearProjectConfig",
           "when": "view == copilotPromptsTree",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "copilotPrompts.refresh",
           "when": "view == copilotPromptsTree",
+          "group": "navigation@3"
+        },
+        {
+          "command": "copilotPrompts.checkIssues",
+          "when": "view == copilotPromptsTree",
           "group": "navigation@4"
+        },
+        {
+          "command": "copilotPrompts.search",
+          "when": "view == copilotPromptsTree",
+          "group": "navigation@5"
         },
         {
           "command": "copilotPrompts.showActive",
@@ -179,12 +200,21 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
+    "fetch:latest": "node fetch_latest_config.js",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile",
     "lint": "eslint src --ext ts",
     "package": "vsce package"
   },
+  "commands": [
+    {
+      "command": "copilotPrompts.selectTarget",
+      "title": "选择目标工作区并应用配置",
+      "category": "Copilot Prompts",
+      "icon": "$(rocket)"
+    }
+  ],
   "devDependencies": {
     "@types/node": "^18.x",
     "@types/vscode": "^1.85.0",
