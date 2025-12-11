@@ -58,9 +58,27 @@ export class PromptsProvider implements vscode.TreeDataProvider<PromptItem> {
         }
 
         return filtered.map(p => {
+            // 检查是否是本地自定义 agent
+            const isLocal = p.id.startsWith('local-');
+            const isProjectLocal = p.id.includes('local-project-');
+            
+            // 构建显示标签
+            let displayLabel = p.title;
+            let sourceEmoji = '';
+            
+            if (isLocal) {
+                if (isProjectLocal) {
+                    sourceEmoji = '📁 ';
+                } else {
+                    sourceEmoji = '🏠 ';
+                }
+            } else {
+                sourceEmoji = '☁️ ';
+            }
+            
             const item = new PromptItem(
                 p.id,
-                p.title,
+                `${sourceEmoji}${displayLabel}`,
                 p.description,
                 vscode.TreeItemCollapsibleState.None,
                 'prompt'
@@ -72,8 +90,20 @@ export class PromptsProvider implements vscode.TreeDataProvider<PromptItem> {
                 ? vscode.TreeItemCheckboxState.Checked 
                 : vscode.TreeItemCheckboxState.Unchecked;
             
-            // 设置tooltip
-            item.tooltip = `${p.description}\n\n路径: ${p.path}\n标签: ${p.tags.join(', ')}`;
+            // 设置图标
+            if (isLocal) {
+                if (isProjectLocal) {
+                    item.iconPath = new vscode.ThemeIcon('folder', new vscode.ThemeColor('charts.blue'));
+                } else {
+                    item.iconPath = new vscode.ThemeIcon('home', new vscode.ThemeColor('charts.green'));
+                }
+            } else {
+                item.iconPath = new vscode.ThemeIcon('cloud', new vscode.ThemeColor('charts.orange'));
+            }
+            
+            // 设置 tooltip
+            const sourceLabel = isProjectLocal ? '📁 Project Custom' : isLocal ? '🏠 User Custom' : '☁️ GitHub Central';
+            item.tooltip = `${p.description}\n\n来源: ${sourceLabel}\n路径: ${p.path}\n标签: ${p.tags.join(', ')}`;
 
             return item;
         });

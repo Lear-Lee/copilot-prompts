@@ -168,13 +168,12 @@ export class ConfigValidator {
                             );
 
                             if (choice === '确认') {
-                                let backupCount = 0;
+                                let removedCount = 0;
                                 for (let i = 1; i < configPaths.length; i++) {
-                                    const backupPath = configPaths[i].path + '.backup';
-                                    fs.renameSync(configPaths[i].path, backupPath);
-                                    backupCount++;
+                                    fs.unlinkSync(configPaths[i].path);
+                                    removedCount++;
                                 }
-                                vscode.window.showInformationMessage(`✅ 已备份 ${backupCount} 个配置文件`);
+                                vscode.window.showInformationMessage(`✅ 已移除 ${removedCount} 个重复配置文件`);
                             }
                         }
                     },
@@ -1046,18 +1045,16 @@ tools: ['edit', 'search']
             return false;
         }
 
-        const backupPath = configPath + '.backup';
-        
         const choice = await vscode.window.showWarningMessage(
-            `确认备份 ${firstFolder.name} 的配置文件？\n这将避免影响其他项目`,
+            `确认删除 ${firstFolder.name} 的配置文件？\n这将避免影响其他项目`,
             { modal: true },
-            '备份',
+            '删除',
             '取消'
         );
 
-        if (choice === '备份') {
-            fs.renameSync(configPath, backupPath);
-            vscode.window.showInformationMessage(`✅ 已备份 ${firstFolder.name} 的配置`);
+        if (choice === '删除') {
+            fs.unlinkSync(configPath);
+            vscode.window.showInformationMessage(`✅ 已删除 ${firstFolder.name} 的配置`);
             return true;
         }
 

@@ -132,6 +132,24 @@
         "title": "查看 MTA 智能助手配置",
         "category": "Copilot Prompts",
         "icon": "$(file-text)"
+      },
+      {
+        "command": "copilotPrompts.createAgent",
+        "title": "新建 Agent",
+        "category": "MTA 智能助手",
+        "icon": "$(add)"
+      },
+      {
+        "command": "copilotPrompts.editAgent",
+        "title": "编辑 Agent",
+        "category": "MTA 智能助手",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "copilotPrompts.generateAgentFromPackage",
+        "title": "从 npm 包生成 Agent",
+        "category": "MTA 智能助手",
+        "icon": "$(package)"
       }
     ],
     "menus": {
@@ -167,6 +185,11 @@
           "group": "navigation@5"
         },
         {
+          "command": "copilotPrompts.createAgent",
+          "when": "view == copilotPromptsTree",
+          "group": "navigation@6"
+        },
+        {
           "command": "copilotPrompts.showActive",
           "when": "view == copilotPromptsTree",
           "group": "1_info@1"
@@ -189,9 +212,14 @@
       ],
       "view/item/context": [
         {
-          "command": "copilotPrompts.toggleItem",
-          "when": "view == copilotPromptsTree && viewItem == prompt",
+          "command": "copilotPrompts.viewPromptContent",
+          "when": "view == copilotPromptsView && viewItem == prompt",
           "group": "inline"
+        },
+        {
+          "command": "copilotPrompts.editAgent",
+          "when": "view == copilotPromptsView && viewItem == prompt",
+          "group": "edit@1"
         }
       ],
       "explorer/context": [

@@ -4,6 +4,9 @@ import * as fs from 'fs';
 import { PromptsProvider, PromptItem } from './promptsProvider';
 import { ConfigManager } from './configManager';
 import { ConfigValidator } from './configValidator';
+import { AgentEditorPanel } from './agentEditorPanel';
+import { PackageAnalyzer } from './packageAnalyzer';
+import { AgentGenerator } from './agentGenerator';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Copilot Prompts Manager 已激活');
@@ -628,6 +631,177 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // 新建 Agent
+    const createAgent = vscode.commands.registerCommand('copilotPrompts.createAgent', async () => {
+        AgentEditorPanel.createOrShow(context.extensionUri);
+    });
+
+    // 编辑 Agent
+    const editAgent = vscode.commands.registerCommand('copilotPrompts.editAgent', async (item?: PromptItem) => {
+        if (!item) {
+            vscode.window.showWarningMessage('请在列表中选择要编辑的 Agent');
+            return;
+        }
+
+        // 检查是否是本地 agent
+        const allPrompts = configManager.getAllPrompts();
+        const targetPrompt = allPrompts.find(p => p.id === item.id);
+        
+        if (!targetPrompt) {
+            vscode.window.showWarningMessage('未找到该 Agent');
+            return;
+        }
+
+        // 只允许编辑本地 agent
+        if (!item.id.startsWith('local-')) {
+            vscode.window.showInformationMessage('只能编辑本地自定义 Agent。GitHub 中央仓库的 Agent 请通过 PR 提交修改。');
+            return;
+        }
+
+        // 读取文件内容
+        try {
+            const agentPath = targetPrompt.path;
+            const agentContent = fs.readFileSync(agentPath, 'utf-8');
+            
+            AgentEditorPanel.createOrShow(context.extensionUri, agentPath, agentContent);
+        } catch (error) {
+            vscode.window.showErrorMessage(`打开 Agent 失败: ${error}`);
+        }
+    });
+
+    // 从 npm 包生成 Agent
+    const generateAgentFromPackage = vscode.commands.registerCommand('copilotPrompts.generateAgentFromPackage', async () => {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+            vscode.window.showWarningMessage('请先打开一个工作区');
+            return;
+        }
+
+        const packageAnalyzer = new PackageAnalyzer(outputChannel);
+        const agentGenerator = new AgentGenerator();
+
+        // 获取已安装的包列表
+        const installedPackages = await packageAnalyzer.getInstalledPackages(workspaceFolder.uri.fsPath);
+
+        if (installedPackages.length === 0) {
+            vscode.window.showWarningMessage('当前项目没有安装任何 npm 包。请先在 package.json 中添加依赖并运行 npm install。');
+            return;
+        }
+
+        // 显示包选择器
+        const selectedPackage = await vscode.window.showQuickPick(
+            installedPackages.map(pkg => ({
+                label: pkg,
+                description: '已安装的 npm 包'
+            })),
+            {
+                placeHolder: '选择要分析的 npm 包',
+                matchOnDescription: true,
+                title: '从 npm 包生成 Agent'
+            }
+        );
+
+        if (!selectedPackage) {
+            return;
+        }
+
+        const packageName = selectedPackage.label;
+
+        // 显示进度
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `正在分析 ${packageName}...`,
+                cancellable: false
+            },
+            async (progress) => {
+                try {
+                    // 分析包
+                    progress.report({ message: '读取 package.json...' });
+                    const analysis = await packageAnalyzer.analyzePackage(packageName, workspaceFolder.uri.fsPath);
+
+                    if (!analysis) {
+                        return;
+                    }
+
+                    // 生成 Agent Markdown
+                    progress.report({ message: '生成 Agent 内容...' });
+                    const agentMarkdown = agentGenerator.generateAgentMarkdown(analysis);
+                    const fileName = agentGenerator.generateFileName(packageName);
+
+                    // 询问保存位置
+                    const saveLocation = await vscode.window.showQuickPick(
+                        [
+                            { label: '📁 项目 (.github/agents/)', value: 'project' },
+                            { label: '🏠 用户主目录 (~/.copilot-agents/)', value: 'user' }
+                        ],
+                        {
+                            placeHolder: '选择保存位置',
+                            title: `保存 ${fileName}`
+                        }
+                    );
+
+                    if (!saveLocation) {
+                        return;
+                    }
+
+                    // 保存文件
+                    progress.report({ message: '保存 Agent 文件...' });
+                    let targetPath: string;
+
+                    if (saveLocation.value === 'project') {
+                        const agentsDir = path.join(workspaceFolder.uri.fsPath, '.github', 'agents');
+                        if (!fs.existsSync(agentsDir)) {
+                            fs.mkdirSync(agentsDir, { recursive: true });
+                        }
+                        targetPath = path.join(agentsDir, fileName);
+                    } else {
+                        const agentsDir = path.join(require('os').homedir(), '.copilot-agents');
+                        if (!fs.existsSync(agentsDir)) {
+                            fs.mkdirSync(agentsDir, { recursive: true });
+                        }
+                        targetPath = path.join(agentsDir, fileName);
+                    }
+
+                    // 检查文件是否已存在
+                    if (fs.existsSync(targetPath)) {
+                        const overwrite = await vscode.window.showWarningMessage(
+                            `文件 ${fileName} 已存在，是否覆盖？`,
+                            '覆盖',
+                            '取消'
+                        );
+
+                        if (overwrite !== '覆盖') {
+                            return;
+                        }
+                    }
+
+                    // 写入文件
+                    fs.writeFileSync(targetPath, agentMarkdown, 'utf-8');
+
+                    // 刷新配置
+                    await vscode.commands.executeCommand('copilotPrompts.refresh');
+
+                    // 询问是否打开文件
+                    const action = await vscode.window.showInformationMessage(
+                        `✅ Agent 已生成: ${fileName}`,
+                        '打开文件',
+                        '完成'
+                    );
+
+                    if (action === '打开文件') {
+                        const doc = await vscode.workspace.openTextDocument(targetPath);
+                        await vscode.window.showTextDocument(doc);
+                    }
+
+                } catch (error) {
+                    vscode.window.showErrorMessage(`生成 Agent 失败: ${error}`);
+                    outputChannel.appendLine(`❌ 错误: ${error}`);
+                }
+            }
+        );
+    });
+
     context.subscriptions.push(
         treeView,
         applyConfig,
@@ -646,7 +820,10 @@ export function activate(context: vscode.ExtensionContext) {
         selectTarget,
         applyToFolder,
         clearFolderConfig,
-        viewFolderConfig
+        viewFolderConfig,
+        createAgent,
+        editAgent,
+        generateAgentFromPackage
     );
 }
 

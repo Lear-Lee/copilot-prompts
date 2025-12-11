@@ -227,10 +227,6 @@ export class ConfigManager {
             fs.mkdirSync(globalConfigDir, { recursive: true });
         }
         const globalConfigPath = path.join(globalConfigDir, 'copilot-instructions.md');
-        if (fs.existsSync(globalConfigPath)) {
-            const backupPath = `${globalConfigPath}.backup.${Date.now()}`;
-            fs.copyFileSync(globalConfigPath, backupPath);
-        }
         fs.writeFileSync(globalConfigPath, content, 'utf-8');
         return { success: true, count: selectedPrompts.length };
     }
@@ -304,12 +300,6 @@ export class ConfigManager {
 
         const outputPath = path.join(outputDir, 'copilot-instructions.md');
 
-        // 备份旧文件
-        if (fs.existsSync(outputPath)) {
-            const backupPath = `${outputPath}.backup.${Date.now()}`;
-            fs.copyFileSync(outputPath, backupPath);
-        }
-
         fs.writeFileSync(outputPath, content, 'utf-8');
 
         // 同时复制 agent 文件到 .github/agents/ 目录
@@ -325,12 +315,6 @@ export class ConfigManager {
                     const agentContent = await this.githubClient.fetchFileContent(agent.path);
                     const agentFileName = path.basename(agent.path);
                     const agentFilePath = path.join(agentsDir, agentFileName);
-                    
-                    // 备份旧文件
-                    if (fs.existsSync(agentFilePath)) {
-                        const backupPath = `${agentFilePath}.backup.${Date.now()}`;
-                        fs.copyFileSync(agentFilePath, backupPath);
-                    }
                     
                     fs.writeFileSync(agentFilePath, agentContent, 'utf-8');
                     this.outputChannel?.appendLine(`✅ 已复制 agent: ${agentFileName}`);

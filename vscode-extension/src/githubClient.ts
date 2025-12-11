@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 export interface GitHubPromptData {
     id: string;
@@ -51,7 +52,7 @@ export class GitHubClient {
     }
 
     /**
-     * 从 GitHub 或本地获取配置列表
+     * 从 GitHub 或本地获取配置列表（包含用户自定义 agents）
      */
     async fetchPromptsList(config?: Partial<GitHubConfig>): Promise<GitHubPromptData[]> {
         const fullConfig = { ...this.defaultConfig, ...config };
@@ -64,40 +65,51 @@ export class GitHubClient {
             return cached;
         }
 
-        // 优先尝试从本地读取
+        let centralPrompts: GitHubPromptData[] = [];
+
+        // 优先尝试从本地仓库读取中央配置
         if (this.localRepoPath) {
             try {
                 this.log('从本地仓库读取配置列表...');
                 const localPrompts = await this.fetchPromptsFromLocal();
                 if (localPrompts.length > 0) {
-                    this.setCache(cacheKey, localPrompts);
-                    this.log(`✅ 从本地获取 ${localPrompts.length} 个配置`);
-                    return localPrompts;
+                    centralPrompts = localPrompts;
+                    this.log(`✅ 从本地获取 ${localPrompts.length} 个中央配置`);
                 }
             } catch (error) {
                 this.log(`本地读取失败: ${error}`, true);
             }
         }
 
-        // 降级到 GitHub API
-        try {
-            this.log('从 GitHub 获取配置列表...');
-            
-            // 获取 agents 和 prompts 目录
-            const [agents, prompts] = await Promise.all([
-                this.fetchDirectoryFiles(fullConfig, 'agents'),
-                this.fetchPromptsFromCategories(fullConfig)
-            ]);
+        // 如果本地仓库读取失败，从 GitHub 获取
 
-            const allPrompts = [...agents, ...prompts];
-            this.setCache(cacheKey, allPrompts);
-            
-            this.log(`成功获取 ${allPrompts.length} 个配置`);
-            return allPrompts;
-        } catch (error) {
-            this.log(`获取配置失败: ${error}`, true);
-            return this.getFallbackPrompts();
+        // 降级到 GitHub API
+        if (centralPrompts.length === 0) {
+            try {
+                this.log('从 GitHub 获取配置列表...');
+                
+                // 获取 agents 和 prompts 目录
+                const [agents, prompts] = await Promise.all([
+                    this.fetchDirectoryFiles(fullConfig, 'agents'),
+                    this.fetchPromptsFromCategories(fullConfig)
+                ]);
+
+                centralPrompts = [...agents, ...prompts];
+                this.log(`✅ 从 GitHub 获取 ${centralPrompts.length} 个中央配置`);
+            } catch (error) {
+                this.log(`❌ GitHub 获取失败: ${error}`, true);
+                centralPrompts = this.getFallbackPrompts();
+            }
         }
+
+        // 扫描本地自定义 agents
+        const customAgents = await this.fetchLocalCustomAgents();
+        const allPrompts = [...customAgents, ...centralPrompts];
+        
+        this.setCache(cacheKey, allPrompts);
+        this.log(`✅ 总计 ${allPrompts.length} 个配置 (${customAgents.length} 本地自定义 + ${centralPrompts.length} 中央仓库)`);
+        
+        return allPrompts;
     }
 
     /**
@@ -404,6 +416,153 @@ export class GitHubClient {
     clearCache(): void {
         this.cache.clear();
         this.log('缓存已清除');
+    }
+
+    /**
+     * 扫描本地自定义 Agents
+     * 优先级: 项目 .github/agents/ > 用户主目录 ~/.copilot-agents/
+     */
+    private async fetchLocalCustomAgents(): Promise<GitHubPromptData[]> {
+        const customAgents: GitHubPromptData[] = [];
+
+        try {
+            // 1. 扫描所有工作区项目的 .github/agents/
+            if (vscode.workspace.workspaceFolders) {
+                for (const folder of vscode.workspace.workspaceFolders) {
+                    const projectAgentsDir = path.join(folder.uri.fsPath, '.github', 'agents');
+                    if (fs.existsSync(projectAgentsDir)) {
+                        const projectAgents = await this.scanAgentsDirectory(
+                            projectAgentsDir, 
+                            'project',
+                            folder.name
+                        );
+                        customAgents.push(...projectAgents);
+                        if (projectAgents.length > 0) {
+                            this.log(`📁 项目 "${folder.name}" 发现 ${projectAgents.length} 个自定义 agent`);
+                        }
+                    }
+                }
+            }
+
+            // 2. 扫描用户主目录 ~/.copilot-agents/
+            const homeAgentsDir = path.join(os.homedir(), '.copilot-agents');
+            if (fs.existsSync(homeAgentsDir)) {
+                const homeAgents = await this.scanAgentsDirectory(homeAgentsDir, 'user');
+                customAgents.push(...homeAgents);
+                if (homeAgents.length > 0) {
+                    this.log(`🏠 用户主目录发现 ${homeAgents.length} 个自定义 agent`);
+                }
+            }
+
+        } catch (error) {
+            this.log(`扫描本地自定义 agents 出错: ${error}`, true);
+        }
+
+        return customAgents;
+    }
+
+    /**
+     * 扫描指定目录下的 .agent.md 文件
+     */
+    private async scanAgentsDirectory(
+        dirPath: string, 
+        source: 'project' | 'user',
+        projectName?: string
+    ): Promise<GitHubPromptData[]> {
+        const agents: GitHubPromptData[] = [];
+
+        try {
+            const files = fs.readdirSync(dirPath);
+            
+            for (const file of files) {
+                if (!file.endsWith('.agent.md')) {
+                    continue;
+                }
+
+                const filePath = path.join(dirPath, file);
+                const stat = fs.statSync(filePath);
+                
+                if (!stat.isFile()) {
+                    continue;
+                }
+
+                // 读取文件内容
+                const content = fs.readFileSync(filePath, 'utf-8');
+                
+                // 解析元数据
+                const metadata = this.parseLocalAgentMetadata(content, file);
+                
+                // 生成唯一 ID
+                const baseId = file.replace('.agent.md', '');
+                const uniqueId = projectName 
+                    ? `local-${source}-${projectName}-${baseId}`
+                    : `local-${source}-${baseId}`;
+
+                // 生成分类标签
+                const categoryLabel = source === 'project' 
+                    ? `📁 ${projectName || 'Project'} Custom`
+                    : '🏠 User Custom';
+
+                agents.push({
+                    id: uniqueId,
+                    type: 'agent' as const,
+                    category: categoryLabel,
+                    title: metadata.title || file.replace('.agent.md', ''),
+                    description: metadata.description || 'Local custom agent',
+                    path: filePath,
+                    tags: [...metadata.tags, `source:${source}`, 'custom', 'local'],
+                    default: false,
+                    content,
+                    source // 添加来源标记（用于UI显示）
+                } as any);
+            }
+        } catch (error) {
+            this.log(`扫描目录 ${dirPath} 失败: ${error}`, true);
+        }
+
+        return agents;
+    }
+
+    /**
+     * 解析本地 agent 文件的元数据
+     */
+    private parseLocalAgentMetadata(content: string, filename: string): {
+        title: string;
+        description: string;
+        tags: string[];
+    } {
+        let title = filename.replace('.agent.md', '');
+        let description = 'Local custom agent';
+        const tags: string[] = [];
+
+        // 解析 YAML frontmatter (如果有)
+        const frontmatterMatch = content.match(/^---\n([\s\S]*?)\n---/);
+        if (frontmatterMatch) {
+            const frontmatter = frontmatterMatch[1];
+            
+            // 提取 description
+            const descMatch = frontmatter.match(/description:\s*['"](.+?)['"]/);
+            if (descMatch) {
+                description = descMatch[1];
+            }
+
+            // 提取 tags
+            const tagsMatch = frontmatter.match(/tags:\s*\[(.+?)\]/);
+            if (tagsMatch) {
+                const parsedTags = tagsMatch[1]
+                    .split(',')
+                    .map(t => t.trim().replace(/['"]/g, ''));
+                tags.push(...parsedTags);
+            }
+        }
+
+        // 尝试从第一个 # 标题提取 title
+        const titleMatch = content.match(/^#\s+(.+)$/m);
+        if (titleMatch) {
+            title = titleMatch[1];
+        }
+
+        return { title, description, tags };
     }
 
     /**
