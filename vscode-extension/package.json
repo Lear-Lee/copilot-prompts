@@ -114,6 +114,24 @@
         "title": "显示当前生效的配置",
         "category": "Copilot Prompts",
         "icon": "$(info)"
+      },
+      {
+        "command": "copilotPrompts.applyToFolder",
+        "title": "应用 MTA 智能助手配置",
+        "category": "Copilot Prompts",
+        "icon": "$(cloud-download)"
+      },
+      {
+        "command": "copilotPrompts.clearFolderConfig",
+        "title": "清除 MTA 智能助手配置",
+        "category": "Copilot Prompts",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "copilotPrompts.viewFolderConfig",
+        "title": "查看 MTA 智能助手配置",
+        "category": "Copilot Prompts",
+        "icon": "$(file-text)"
       }
     ],
     "menus": {
@@ -174,6 +192,23 @@
           "command": "copilotPrompts.toggleItem",
           "when": "view == copilotPromptsTree && viewItem == prompt",
           "group": "inline"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "copilotPrompts.applyToFolder",
+          "when": "explorerResourceIsFolder && resourceScheme == file && copilotPrompts.isProjectRoot",
+          "group": "copilot@1"
+        },
+        {
+          "command": "copilotPrompts.clearFolderConfig",
+          "when": "explorerResourceIsFolder && resourceScheme == file && copilotPrompts.hasConfig",
+          "group": "copilot@2"
+        },
+        {
+          "command": "copilotPrompts.viewFolderConfig",
+          "when": "explorerResourceIsFolder && resourceScheme == file && copilotPrompts.hasConfig",
+          "group": "copilot@3"
         }
       ]
     },
