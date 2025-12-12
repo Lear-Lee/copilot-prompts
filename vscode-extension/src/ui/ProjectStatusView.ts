@@ -17,7 +17,7 @@ interface ProjectStatus {
 /**
  * 项目树节点
  */
-class ProjectItem extends vscode.TreeItem {
+export class ProjectItem extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     public readonly workspaceFolder: vscode.WorkspaceFolder,

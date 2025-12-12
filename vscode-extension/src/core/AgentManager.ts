@@ -333,40 +333,64 @@ export class AgentManager {
     // 读取 package.json
     const packageJsonPath = path.join(projectPath, 'package.json');
     if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+      try {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+        const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
 
-      // 检测框架
-      if (deps['vue'] || deps['@vue/cli-service']) {
-        features.frameworks.push('vue');
-        const vueVersion = deps['vue']?.match(/\^?(\d+)/)?.[1];
-        if (vueVersion === '3') {
-          features.frameworks.push('vue3');
+        // 检测框架
+        if (deps['vue'] || deps['@vue/cli-service']) {
+          features.frameworks.push('vue');
+          const vueVersion = deps['vue']?.match(/\^?(\d+)/)?.[1];
+          if (vueVersion === '3' || deps['vue']?.includes('^3')) {
+            features.frameworks.push('vue3');
+          }
         }
+        if (deps['react']) features.frameworks.push('react');
+        if (deps['@angular/core']) features.frameworks.push('angular');
+
+        // 检测语言
+        if (deps['typescript'] || deps['@types/node']) {
+          features.languages.push('typescript');
+        }
+        
+        // JavaScript 是默认的
+        features.languages.push('javascript');
+
+        // 检测工具
+        if (deps['vite']) features.tools.push('vite');
+        if (deps['webpack']) features.tools.push('webpack');
+        if (deps['element-plus']) features.tools.push('element-plus');
+        if (deps['@logicflow/core']) features.tools.push('logicflow');
+        if (deps['vue-i18n']) features.tools.push('vue-i18n');
+        if (deps['i18next']) features.tools.push('i18next');
+        
+        // 添加更多常用工具检测
+        if (deps['eslint']) features.tools.push('eslint');
+        if (deps['prettier']) features.tools.push('prettier');
+        if (deps['axios']) features.tools.push('axios');
+      } catch (error) {
+        console.warn('Failed to parse package.json:', error);
       }
-      if (deps['react']) features.frameworks.push('react');
-      if (deps['@angular/core']) features.frameworks.push('angular');
-
-      // 检测语言
-      if (deps['typescript']) features.languages.push('typescript');
-      if (packageJsonPath) features.languages.push('javascript');
-
-      // 检测工具
-      if (deps['vite']) features.tools.push('vite');
-      if (deps['webpack']) features.tools.push('webpack');
-      if (deps['element-plus']) features.tools.push('element-plus');
-      if (deps['@logicflow/core']) features.tools.push('logicflow');
-      if (deps['vue-i18n']) features.tools.push('vue-i18n');
-      if (deps['i18next']) features.tools.push('i18next');
     }
 
-    // 检测文件
+    // 检测 TypeScript 配置
+    if (fs.existsSync(path.join(projectPath, 'tsconfig.json'))) {
+      features.files.push('tsconfig.json');
+      if (!features.languages.includes('typescript')) {
+        features.languages.push('typescript');
+      }
+    }
+
+    // 检测其他配置文件
     const checkFiles = [
-      'tsconfig.json',
       'vite.config.ts',
+      'vite.config.js',
       'vue.config.js',
+      'webpack.config.js',
       'i18n.ts',
-      'i18n.js'
+      'i18n.js',
+      '.eslintrc.js',
+      '.prettierrc'
     ];
 
     for (const file of checkFiles) {
@@ -376,12 +400,65 @@ export class AgentManager {
     }
 
     // 检测目录
-    if (fs.existsSync(path.join(projectPath, 'src', 'locales'))) {
+    if (fs.existsSync(path.join(projectPath, 'src', 'locales')) ||
+        fs.existsSync(path.join(projectPath, 'locales'))) {
       features.files.push('locales');
       features.keywords.push('i18n');
     }
 
+    // 检测 src 目录下的文件扩展名
+    const srcPath = path.join(projectPath, 'src');
+    if (fs.existsSync(srcPath)) {
+      try {
+        const files = this.getFilesRecursive(srcPath, 2); // 只扫描 2 层
+        const hasVue = files.some(f => f.endsWith('.vue'));
+        const hasTs = files.some(f => f.endsWith('.ts') || f.endsWith('.tsx'));
+        
+        if (hasVue && !features.frameworks.includes('vue')) {
+          features.frameworks.push('vue');
+        }
+        if (hasTs && !features.languages.includes('typescript')) {
+          features.languages.push('typescript');
+        }
+      } catch (error) {
+        console.warn('Failed to scan src directory:', error);
+      }
+    }
+
     return features;
+  }
+
+  /**
+   * 递归获取文件列表（限制深度）
+   */
+  private getFilesRecursive(dir: string, maxDepth: number, currentDepth = 0): string[] {
+    if (currentDepth >= maxDepth) {
+      return [];
+    }
+
+    const files: string[] = [];
+    try {
+      const items = fs.readdirSync(dir);
+      for (const item of items) {
+        // 跳过 node_modules 和其他常见的忽略目录
+        if (item === 'node_modules' || item === '.git' || item === 'dist' || item === 'build') {
+          continue;
+        }
+
+        const fullPath = path.join(dir, item);
+        const stat = fs.statSync(fullPath);
+        
+        if (stat.isDirectory()) {
+          files.push(...this.getFilesRecursive(fullPath, maxDepth, currentDepth + 1));
+        } else {
+          files.push(fullPath);
+        }
+      }
+    } catch (error) {
+      // 忽略权限错误等
+    }
+
+    return files;
   }
 
   /**
@@ -395,7 +472,8 @@ export class AgentManager {
 
     for (const [id, agent] of Object.entries(config.agents)) {
       const result = this.calculateMatch(features, agent);
-      if (result.score > 50) {
+      // 降低阈值：任何有匹配的都返回（分数 > 0）
+      if (result.score > 0) {
         matches.push({
           id,
           agent,
@@ -407,6 +485,19 @@ export class AgentManager {
 
     // 按分数排序
     matches.sort((a, b) => b.score - a.score);
+
+    // 如果没有任何匹配，返回 TypeScript agent（通用）
+    if (matches.length === 0) {
+      const tsAgent = config.agents['typescript'];
+      if (tsAgent) {
+        matches.push({
+          id: 'typescript',
+          agent: tsAgent,
+          score: 1,
+          reasons: ['默认通用 Agent']
+        });
+      }
+    }
 
     return matches;
   }

@@ -8,7 +8,7 @@ import { AgentEditorPanel } from './agentEditorPanel';
 import { PackageAnalyzer } from './packageAnalyzer';
 import { AgentGenerator } from './agentGenerator';
 import { AutoConfigGenerator } from './autoConfigGenerator';
-import { ProjectStatusView } from './ui/ProjectStatusView';
+import { ProjectStatusView, ProjectItem } from './ui/ProjectStatusView';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Copilot Prompts Manager 已激活');
@@ -99,6 +99,31 @@ export function activate(context: vscode.ExtensionContext) {
     const projectStatusTreeView = vscode.window.createTreeView('copilotProjectStatus', {
         treeDataProvider: projectStatusView,
         showCollapseAll: true
+    });
+
+    // 监听项目状态视图的选择事件 - 点击项目自动配置
+    projectStatusTreeView.onDidChangeSelection(async (event) => {
+        if (event.selection.length > 0) {
+            const item = event.selection[0] as ProjectItem;
+            
+            // 只处理未配置的项目（自动配置）
+            if (item.contextValue === 'project-unconfigured') {
+                try {
+                    await projectStatusView.autoConfigureProject(item);
+                    vscode.window.showInformationMessage(`✅ 已为 ${item.label} 自动配置 Copilot Prompts`);
+                } catch (error) {
+                    vscode.window.showErrorMessage(
+                        `配置 ${item.label} 失败: ${error instanceof Error ? error.message : String(error)}`
+                    );
+                }
+            }
+            // 已配置的项目，显示状态即可
+            else if (item.contextValue === 'project-configured') {
+                const desc = typeof item.description === 'string' ? item.description : '';
+                const agents = desc.match(/\d+/)?.[0] || '0';
+                vscode.window.showInformationMessage(`📋 ${item.label} 已配置 ${agents} 个 Agent`);
+            }
+        }
     });
 
     // 注册原有 TreeView（保持兼容）
