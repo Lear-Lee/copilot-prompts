@@ -1,0 +1,43 @@
+{
+  "name": "copilot-prompts-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP 服务器用于智能分析项目并自动匹配 Copilot Agents",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "copilot-prompts-mcp": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/index.js",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "copilot",
+    "ai",
+    "agents",
+    "github",
+    "claude"
+  ],
+  "author": "ForLear",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.6.5",
+    "fast-glob": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForLear/copilot-prompts.git",
+    "directory": "mcp-server"
+  }
+}

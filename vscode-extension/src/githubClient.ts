@@ -159,12 +159,35 @@ export class GitHubClient {
     }
 
     /**
-     * 获取目录下的文件列表
+     * 列出目录下的所有文件（公开方法）
      */
-    private async fetchDirectoryFiles(config: GitHubConfig, dirPath: string): Promise<GitHubPromptData[]> {
+    async listDirectoryFiles(dirPath: string, config?: Partial<GitHubConfig>): Promise<Array<{ name: string; path: string; type: string }>> {
+        const fullConfig = { ...this.defaultConfig, ...config };
+
+        // 优先从本地读取
+        if (this.localRepoPath) {
+            try {
+                const localDirPath = path.join(this.localRepoPath, dirPath);
+                if (fs.existsSync(localDirPath)) {
+                    this.log(`从本地读取目录: ${dirPath}`);
+                    const files = fs.readdirSync(localDirPath);
+                    return files
+                        .filter(name => name.endsWith('.md'))
+                        .map(name => ({
+                            name,
+                            path: path.join(dirPath, name).replace(/\\/g, '/'),
+                            type: 'file'
+                        }));
+                }
+            } catch (error) {
+                this.log(`本地目录读取失败: ${dirPath} - ${error}`, true);
+            }
+        }
+
+        // 降级到 GitHub API
         try {
-            const apiUrl = `https://api.github.com/repos/${config.owner}/${config.repo}/contents/${dirPath}?ref=${config.branch}`;
-            this.log(`获取目录: ${apiUrl}`);
+            const apiUrl = `https://api.github.com/repos/${fullConfig.owner}/${fullConfig.repo}/contents/${dirPath}?ref=${fullConfig.branch}`;
+            this.log(`从 GitHub 获取目录: ${apiUrl}`);
 
             const response = await fetch(apiUrl, {
                 headers: {
@@ -178,13 +201,28 @@ export class GitHubClient {
             }
 
             const files = await response.json() as any[];
-            const mdFiles = files.filter((file: any) => 
-                file.name.endsWith('.md') && file.type === 'file'
-            );
+            return files
+                .filter((file: any) => file.name.endsWith('.md') && file.type === 'file')
+                .map((file: any) => ({
+                    name: file.name,
+                    path: file.path,
+                    type: file.type
+                }));
+        } catch (error) {
+            this.log(`获取目录失败: ${dirPath} - ${error}`, true);
+            return [];
+        }
+    }
 
+    /**
+     * 获取目录下的文件列表（内部使用，返回完整元数据）
+     */
+    private async fetchDirectoryFiles(config: GitHubConfig, dirPath: string): Promise<GitHubPromptData[]> {
+        try {
+            const files = await this.listDirectoryFiles(dirPath, config);
             const prompts: GitHubPromptData[] = [];
             
-            for (const file of mdFiles) {
+            for (const file of files) {
                 const metadata = await this.parseFileMetadata(file.path, config);
                 if (metadata) {
                     prompts.push(metadata);

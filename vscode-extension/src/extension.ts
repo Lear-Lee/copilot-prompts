@@ -7,6 +7,8 @@ import { ConfigValidator } from './configValidator';
 import { AgentEditorPanel } from './agentEditorPanel';
 import { PackageAnalyzer } from './packageAnalyzer';
 import { AgentGenerator } from './agentGenerator';
+import { AutoConfigGenerator } from './autoConfigGenerator';
+import { ProjectStatusView } from './ui/ProjectStatusView';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Copilot Prompts Manager 已激活');
@@ -20,6 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     const configManager = new ConfigManager(context, outputChannel);
     const promptsProvider = new PromptsProvider(configManager);
     const configValidator = new ConfigValidator(configManager);
+    const autoConfigGenerator = new AutoConfigGenerator(outputChannel);
 
     // 智能识别项目根目录的辅助函数
     const isProjectRoot = (folderPath: string): boolean => {
@@ -91,7 +94,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
     })();
 
-    // 注册 TreeView
+    // 创建新的项目状态视图
+    const projectStatusView = new ProjectStatusView(context);
+    const projectStatusTreeView = vscode.window.createTreeView('copilotProjectStatus', {
+        treeDataProvider: projectStatusView,
+        showCollapseAll: true
+    });
+
+    // 注册原有 TreeView（保持兼容）
     const treeView = vscode.window.createTreeView('copilotPromptsTree', {
         treeDataProvider: promptsProvider,
         showCollapseAll: true,
@@ -669,6 +679,116 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
+    // 自动生成配置（智能匹配 Agents）
+    const autoGenerateConfig = vscode.commands.registerCommand('copilotPrompts.autoGenerateConfig', async (uri?: vscode.Uri) => {
+        // 确定目标工作区
+        let targetFolder: vscode.WorkspaceFolder | undefined;
+        
+        if (uri) {
+            // 从右键菜单调用，传入了 URI
+            targetFolder = vscode.workspace.getWorkspaceFolder(uri);
+            if (!targetFolder) {
+                vscode.window.showWarningMessage('❌ 无法识别工作区文件夹');
+                return;
+            }
+        } else {
+            // 从命令面板或侧边栏调用，需要选择工作区
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders || workspaceFolders.length === 0) {
+                vscode.window.showErrorMessage('❌ 请先打开一个工作区');
+                return;
+            }
+
+            if (workspaceFolders.length === 1) {
+                targetFolder = workspaceFolders[0];
+            } else {
+                // 多工作区，让用户选择
+                interface FolderQuickPick extends vscode.QuickPickItem {
+                    folder: vscode.WorkspaceFolder;
+                }
+
+                const items: FolderQuickPick[] = workspaceFolders.map(folder => ({
+                    label: `$(folder) ${folder.name}`,
+                    description: folder.uri.fsPath,
+                    folder: folder
+                }));
+
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: '选择要自动配置 Copilot 的项目',
+                    title: '自动生成智能配置',
+                    ignoreFocusOut: true
+                });
+
+                if (!selected) return;
+                targetFolder = selected.folder;
+            }
+        }
+
+        if (!targetFolder) {
+            vscode.window.showErrorMessage('❌ 未能确定目标工作区');
+            return;
+        }
+
+        // 显示进度条执行自动配置
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `正在为 ${targetFolder.name} 生成智能配置...`,
+                cancellable: false
+            },
+            async (progress) => {
+                try {
+                    progress.report({ message: '分析项目结构...' });
+                    outputChannel.appendLine(`\n========== 自动生成配置: ${targetFolder.name} ==========`);
+                    
+                    progress.report({ message: '匹配适用的 Agents...', increment: 30 });
+                    
+                    // 调用自动生成器
+                    const result = await autoConfigGenerator.generateForWorkspace(targetFolder);
+                    
+                    progress.report({ message: '生成配置文件...', increment: 40 });
+                    
+                    // 显示结果
+                    if (result.success) {
+                        progress.report({ message: '完成！', increment: 30 });
+                        
+                        const matchedAgents = result.matchedAgents || [];
+                        const agentNames = matchedAgents.map(a => a.title).join('\n  • ');
+                        
+                        const action = await vscode.window.showInformationMessage(
+                            `✅ 自动配置完成！`,
+                            { 
+                                modal: true,
+                                detail: `项目: ${targetFolder.name}\n` +
+                                       `项目类型: ${result.projectType || '未知'}\n` +
+                                       `匹配到 ${matchedAgents.length} 个 Agent:\n  • ${agentNames}\n\n` +
+                                       `配置文件: .github/copilot-instructions.md`
+                            },
+                            '打开配置文件',
+                            '关闭'
+                        );
+
+                        outputChannel.appendLine(`✅ 自动配置成功`);
+                        outputChannel.appendLine(`  项目类型: ${result.projectType}`);
+                        outputChannel.appendLine(`  匹配 Agent 数量: ${matchedAgents.length}`);
+                        outputChannel.appendLine(`  Agent 列表: ${matchedAgents.map(a => a.title).join(', ')}`);
+
+                        if (action === '打开配置文件' && result.configPath) {
+                            const doc = await vscode.workspace.openTextDocument(result.configPath);
+                            await vscode.window.showTextDocument(doc);
+                        }
+                    } else {
+                        throw new Error(result.error || '未知错误');
+                    }
+                } catch (error) {
+                    const errorMsg = error instanceof Error ? error.message : String(error);
+                    vscode.window.showErrorMessage(`❌ 自动配置失败: ${errorMsg}`);
+                    outputChannel.appendLine(`❌ 自动配置失败: ${errorMsg}`);
+                }
+            }
+        );
+    });
+
     // 新建 Agent
     const createAgent = vscode.commands.registerCommand('copilotPrompts.createAgent', async () => {
         AgentEditorPanel.createOrShow(context.extensionUri);
@@ -859,10 +979,50 @@ export function activate(context: vscode.ExtensionContext) {
         applyToFolder,
         clearFolderConfig,
         viewFolderConfig,
+        autoGenerateConfig,
         createAgent,
         editAgent,
         generateAgentFromPackage
     );
+
+    // === 新增命令：项目状态视图相关 ===
+
+    // 自动配置单个项目
+    context.subscriptions.push(
+        vscode.commands.registerCommand('copilotPrompts.autoConfigProject', async (item) => {
+            await projectStatusView.autoConfigureProject(item);
+        })
+    );
+
+    // 批量配置所有项目
+    context.subscriptions.push(
+        vscode.commands.registerCommand('copilotPrompts.autoConfigAll', async () => {
+            await projectStatusView.autoConfigureAll();
+        })
+    );
+
+    // 更新项目配置
+    context.subscriptions.push(
+        vscode.commands.registerCommand('copilotPrompts.updateProjectConfig', async (item) => {
+            await projectStatusView.updateProjectConfig(item);
+        })
+    );
+
+    // 删除项目配置
+    context.subscriptions.push(
+        vscode.commands.registerCommand('copilotPrompts.deleteProjectConfig', async (item) => {
+            await projectStatusView.deleteProjectConfig(item);
+        })
+    );
+
+    // 刷新项目状态
+    context.subscriptions.push(
+        vscode.commands.registerCommand('copilotPrompts.refreshProjectStatus', () => {
+            projectStatusView.refresh();
+        })
+    );
+
+    context.subscriptions.push(treeView, projectStatusTreeView);
 }
 
 function getWebviewContent(configManager: ConfigManager): string {
