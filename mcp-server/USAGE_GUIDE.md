@@ -83,6 +83,12 @@ notepad %APPDATA%\Claude\claude_desktop_config.json
 }
 ```
 
+**⚠️ 注意**: 
+- 使用 `servers` (不是 `mcpServers`)
+- 必须包含 `env: {}` 字段
+- 推荐添加 `autoStart: true`
+- 路径必须是绝对路径
+
 2. **配置工作区设置**
 
 在 `.vscode/settings.json` 中添加：

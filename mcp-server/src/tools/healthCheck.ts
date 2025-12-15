@@ -55,23 +55,49 @@ export async function healthCheck(args: {
             if (fs.existsSync(mcpJsonPath)) {
                 try {
                     const config = JSON.parse(fs.readFileSync(mcpJsonPath, 'utf-8'));
-                    if (config.mcpServers?.['copilot-prompts']) {
+                    
+                    // 检查新格式 (servers) 和旧格式 (mcpServers)
+                    const hasNewFormat = config.servers?.['copilot-prompts'];
+                    const hasOldFormat = config.mcpServers?.['copilot-prompts'];
+                    
+                    if (hasNewFormat) {
                         checks.configuration.status = 'healthy';
-                        checks.configuration.details.push('✅ mcp.json 配置正确');
+                        checks.configuration.details.push('✅ mcp.json 配置正确 (使用新格式)');
                         
-                        const serverConfig = config.mcpServers['copilot-prompts'];
+                        const serverConfig = config.servers['copilot-prompts'];
                         if (verbose) {
                             checks.configuration.details.push(`  Command: ${serverConfig.command}`);
                             checks.configuration.details.push(`  Args: ${serverConfig.args?.join(' ')}`);
-                            checks.configuration.details.push(`  AutoStart: ${serverConfig.autoStart}`);
+                            checks.configuration.details.push(`  AutoStart: ${serverConfig.autoStart ?? 'undefined'}`);
+                            checks.configuration.details.push(`  Env: ${JSON.stringify(serverConfig.env ?? {})}`);
+                        }
+                        
+                        // 检查是否包含推荐字段
+                        if (!serverConfig.env) {
+                            checks.configuration.details.push('💡 建议: 添加 "env": {} 字段');
+                        }
+                        if (!serverConfig.autoStart) {
+                            checks.configuration.details.push('💡 建议: 添加 "autoStart": true 字段');
+                        }
+                    } else if (hasOldFormat) {
+                        checks.configuration.status = 'warning';
+                        checks.configuration.details.push('⚠️  mcp.json 使用旧格式 (mcpServers)');
+                        checks.configuration.details.push('💡 建议: 运行 auto_setup 工具升级到新格式 (servers)');
+                        
+                        if (verbose) {
+                            const serverConfig = config.mcpServers['copilot-prompts'];
+                            checks.configuration.details.push(`  Command: ${serverConfig.command}`);
+                            checks.configuration.details.push(`  Args: ${serverConfig.args?.join(' ')}`);
                         }
                     } else {
                         checks.configuration.status = 'warning';
                         checks.configuration.details.push('⚠️  mcp.json 缺少 copilot-prompts 配置');
+                        checks.configuration.details.push('💡 建议: 运行 auto_setup 工具添加配置');
                     }
                 } catch (error) {
                     checks.configuration.status = 'error';
                     checks.configuration.details.push(`❌ mcp.json 格式错误: ${error}`);
+                    checks.configuration.details.push('💡 修复: 运行 auto_setup 工具重新生成配置');
                 }
             } else {
                 checks.configuration.status = 'warning';

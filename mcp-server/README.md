@@ -599,9 +599,49 @@ mcp-server/
   - VS Code 插件：UI 友好，适合开发者日常使用
   - MCP 服务器：AI 原生，适合与 Claude 等 AI 工具对话式交互
 
+## � 文档
+
+- **[快速开始](./GETTING_STARTED.md)** - 新手入门指南
+- **[使用指南](./USAGE_GUIDE.md)** - 详细使用说明
+- **[故障排除](./TROUBLESHOOTING.md)** - 常见问题解决方案 🆕
+- **[迁移指南](./MIGRATION_GUIDE.md)** - 版本升级指南 🆕
+- **[开发路线图](./DEVELOPMENT_ROADMAP.md)** - 未来计划
+- **[更新日志](./CHANGELOG.md)** - 版本历史
+
 ## 🐛 故障排查
 
-### 问题：Claude Desktop 无法连接
+### 快速诊断
+
+遇到问题？使用内置工具快速诊断：
+
+```
+请使用 health_check 工具检查我的配置
+```
+
+### 常见问题
+
+#### 问题：VS Code 看不到 MCP 工具
+
+**症状**: 配置文件已创建但 Copilot 中看不到工具
+
+**解决**:
+1. 检查配置格式是否正确（使用 `servers` 而不是 `mcpServers`）
+2. 确保包含 `env: {}` 和 `autoStart: true` 字段
+3. 重新加载 VS Code 窗口
+4. 或使用 `auto_setup` 工具自动修复
+
+详细解决方案请查看 [故障排除指南](./TROUBLESHOOTING.md)
+
+#### 问题：配置格式错误
+
+**错误提示**: "不允许属性 mcpServers"
+
+**解决**:
+- VS Code 应使用 `servers` 格式
+- Claude Desktop 使用 `mcpServers` 格式
+- 查看 [迁移指南](./MIGRATION_GUIDE.md) 了解详情
+
+#### 问题：Claude Desktop 无法连接
 
 **解决**:
 1. 检查配置文件路径是否正确
@@ -609,12 +649,13 @@ mcp-server/
 3. 重启 Claude Desktop
 4. 查看日志：`~/Library/Logs/Claude/mcp*.log`
 
-### 问题：工具调用失败
+#### 问题：工具调用失败
 
 **解决**:
-1. 确认网络连接（需访问 GitHub API）
-2. 检查项目路径是否存在
-3. 查看 stderr 输出的错误信息
+1. 使用 `health_check` 工具诊断
+2. 确认网络连接（需访问 GitHub API）
+3. 检查项目路径是否存在
+4. 查看详细错误信息
 
 ## 📄 许可证
 

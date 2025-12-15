@@ -92,12 +92,11 @@ export async function autoSetup(args: {
         // Step 3: 创建或更新 mcp.json
         const mcpJsonPath = path.join(vscodeDir, 'mcp.json');
         const mcpConfig = {
-            $schema: 'https://modelcontextprotocol.io/schema/mcp.json',
-            mcpServers: {
+            servers: {
                 'copilot-prompts': {
                     command: 'node',
                     args: [relativePath],
-                    description: '智能编码规范服务器 - 自动配置生成',
+                    env: {},
                     autoStart: true
                 }
             }
@@ -107,19 +106,33 @@ export async function autoSetup(args: {
             // 合并现有配置
             try {
                 const existingConfig = JSON.parse(fs.readFileSync(mcpJsonPath, 'utf-8'));
-                if (existingConfig.mcpServers?.['copilot-prompts']) {
+                // 检查是否使用了旧格式 mcpServers
+                if (existingConfig.mcpServers && !existingConfig.servers) {
+                    results.warnings.push('检测到旧版配置格式(mcpServers)，已自动升级为新格式(servers)');
+                    existingConfig.servers = existingConfig.mcpServers;
+                    delete existingConfig.mcpServers;
+                }
+                
+                if (existingConfig.servers?.['copilot-prompts']) {
+                    // 确保现有配置包含必要字段
+                    existingConfig.servers['copilot-prompts'] = {
+                        ...mcpConfig.servers['copilot-prompts'],
+                        ...existingConfig.servers['copilot-prompts']
+                    };
+                    fs.writeFileSync(mcpJsonPath, JSON.stringify(existingConfig, null, 2));
                     results.steps.push({ step: '更新 mcp.json', status: 'success' });
                 } else {
-                    existingConfig.mcpServers = {
-                        ...existingConfig.mcpServers,
-                        ...mcpConfig.mcpServers
+                    existingConfig.servers = {
+                        ...existingConfig.servers,
+                        ...mcpConfig.servers
                     };
                     fs.writeFileSync(mcpJsonPath, JSON.stringify(existingConfig, null, 2));
                     results.steps.push({ step: '合并配置到 mcp.json', status: 'success' });
                 }
-            } catch {
+            } catch (err) {
                 fs.writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2));
                 results.steps.push({ step: '重新创建 mcp.json', status: 'success' });
+                results.warnings.push(`原配置文件解析失败: ${err}`);
             }
         } else {
             fs.writeFileSync(mcpJsonPath, JSON.stringify(mcpConfig, null, 2));
