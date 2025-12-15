@@ -1,7 +1,7 @@
 {
   "name": "copilot-prompts-mcp-server",
-  "version": "1.0.0",
-  "description": "MCP 服务器用于智能分析项目并自动匹配 Copilot Agents",
+  "version": "1.3.0",
+  "description": "智能项目分析与编码规范管理 MCP 服务器（支持模块化 Resources 按需加载 + 智能缓存）",
   "type": "module",
   "main": "build/index.js",
   "bin": {
@@ -11,7 +11,9 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "start": "node build/index.js",
-    "prepare": "npm run build"
+    "dev": "tsc --watch",
+    "prepare": "npm run build",
+    "clean": "rm -rf build"
   },
   "keywords": [
     "mcp",

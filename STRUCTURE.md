@@ -1,153 +1,133 @@
 # 项目结构说明
 
-## 目录组织
+## 📁 目录结构
 
 ```
-copilot-prompts/                   # 根目录（GitHub 仓库）
-├── agents/                        # Custom Agents 配置文件
-│   ├── i18n.agent.md             # 国际化专用 Agent
-│   ├── typescript.agent.md       # TypeScript 严格模式 Agent
-│   ├── vitasage.agent.md         # VitaSage 专用 Agent
-│   ├── vue3.agent.md             # Vue 3 通用 Agent
-│   └── vscode-extension-dev.agent.md  # VS Code 扩展开发 Agent
+copilot-prompts/
+├── mcp-server/              # MCP 智能服务（核心功能）
+│   ├── src/                 # TypeScript 源码
+│   │   ├── index.ts         # 服务器入口
+│   │   ├── core/            # 核心模块
+│   │   │   ├── types.ts     # 类型定义
+│   │   │   ├── githubClient.ts
+│   │   │   └── smartAgentMatcher.ts
+│   │   └── tools/           # MCP 工具实现
+│   │       ├── analyzeProject.ts
+│   │       ├── matchAgents.ts
+│   │       ├── listAgents.ts
+│   │       └── generateConfig.ts
+│   ├── build/               # 编译输出
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── README.md            # MCP 使用文档
+│   ├── GETTING_STARTED.md   # 快速开始指南
+│   └── CLAUDE_SETUP.md      # Claude Desktop 配置
 │
-├── common/                        # 通用开发规范
-│   ├── i18n.md                   # 国际化最佳实践
-│   └── typescript-strict.md      # TypeScript 严格模式指南
+├── agents/                  # Custom Agents
+│   ├── vue3.agent.md        # Vue 3 开发规范
+│   ├── typescript.agent.md  # TypeScript 严格模式
+│   ├── i18n.agent.md        # 国际化规范
+│   ├── vitasage.agent.md    # VitaSage 专用
+│   └── logicflow.agent.md   # LogicFlow 流程图
 │
-├── vue/                           # Vue 框架相关配置
-│   └── vue3-typescript.md        # Vue 3 + TypeScript 项目配置
+├── common/                  # 通用规范
+│   ├── typescript-strict.md # TypeScript 规范
+│   └── i18n.md             # 国际化规范
 │
-├── industry/                      # 行业专用配置
-│   └── vitasage-recipe.md        # VitaSage 工业配方系统配置
+├── vue/                     # Vue 专用规范
+│   └── vue3-typescript.md  # Vue 3 + TS 规范
 │
-├── vscode-extension/              # VS Code 扩展插件
-│   ├── src/                      # 源代码
-│   │   ├── extension.ts          # 扩展入口
-│   │   ├── configManager.ts      # 配置管理器
-│   │   ├── githubClient.ts       # GitHub API 客户端
-│   │   ├── configValidator.ts    # 配置验证器
-│   │   └── promptsProvider.ts    # TreeView 数据提供者
-│   ├── out/                      # 编译输出（.gitignore）
-│   ├── node_modules/             # 依赖包（.gitignore）
-│   ├── scripts/                  # 构建脚本
-│   │   └── build.sh              # 一键构建和安装
-│   ├── docs/                     # 文档目录
-│   │   ├── changelog/            # 各版本变更日志
-│   │   ├── guides/               # 使用指南
-│   │   ├── releases/             # 发布说明
-│   │   ├── summaries/            # 功能总结
-│   │   ├── tests/                # 测试记录
-│   │   └── archives/             # 废弃文档归档
-│   ├── package.json              # 扩展配置
-│   ├── CHANGELOG.md              # 统一变更日志
-│   └── README.md                 # 扩展说明
+├── industry/                # 行业专用规范
+│   └── vitasage-recipe.md  # VitaSage 工业配方
 │
-├── tools/                         # 辅助工具
-│   └── agent-manager.html        # Web 可视化管理器（已废弃，使用扩展代替）
+├── docs/                    # 文档目录
+│   ├── DEPLOYMENT_SUMMARY.md
+│   └── SETUP_COMPLETE.md
 │
-├── docs/                          # 项目文档
-│   ├── DEPLOYMENT_SUMMARY.md     # 部署总结
-│   └── SETUP_COMPLETE.md         # 安装完成指南
+├── .github/                 # GitHub 配置
+│   └── copilot-instructions.md
 │
-├── .github/                       # GitHub 配置
-│   └── copilot-instructions.md   # 本项目自身的开发指南
+├── .vscode/                 # VS Code 配置
+│   └── mcp.json            # MCP 服务器配置
 │
-├── AGENTS_GUIDE.md                # Agents 使用指南
-├── BEST_PRACTICES.md              # 最佳实践文档
-├── MANAGER_GUIDE.md               # 配置管理器使用指南
-├── README.md                      # 主 README
-└── .gitignore                     # Git 忽略规则
+├── README.md               # 项目说明
+├── CHANGELOG.md            # 更新日志
+├── AGENTS_GUIDE.md         # Agents 使用指南
+├── BEST_PRACTICES.md       # 最佳实践
+└── STRUCTURE.md            # 本文件
 ```
 
-## 目录职责
+## 🎯 核心组件
 
-### 配置源文件目录（GitHub 仓库核心）
+### 1. MCP 服务器 (mcp-server/)
 
-- **agents/**: Custom Agents 源文件，由插件动态获取并复制到项目 `.github/agents/`
-- **common/**: 通用开发规范，可作为 `copilot-instructions.md` 使用
-- **vue/**: Vue 框架相关配置
-- **industry/**: 行业特定配置
+**功能：**
+- 智能分析项目技术栈
+- 自动匹配合适的 Agents
+- 生成 Copilot 配置文件
+- 列出所有可用 Agents
 
-**说明**: 这些目录是 GitHub 仓库的核心内容，插件从这里获取配置文件。
+**使用：**
+- Claude Desktop
+- VS Code MCP
+- 其他 MCP 客户端
 
-### VS Code 扩展插件
+### 2. Agents 库 (agents/)
 
-- **vscode-extension/**: 完整的 VS Code 扩展项目
-  - 编译、打包、安装为 `.vsix` 文件
-  - 运行时从 GitHub 动态获取配置（从上述配置源目录）
-  - 支持多工作区、配置验证、一键应用等功能
+**内容：**
+预置的开发规范和最佳实践
 
-### 文档和工具
+**格式：**
+- 文件名：xxx.agent.md
+- 包含 YAML frontmatter（description, tools）
+- 使用 @agent-name 调用
 
-- **docs/**: 项目级文档
-- **tools/**: 辅助工具（agent-manager.html 已被扩展取代）
-- **AGENTS_GUIDE.md, BEST_PRACTICES.md, MANAGER_GUIDE.md**: 顶级指南文档
+### 3. 通用规范 (common/, vue/, industry/)
 
-## 工作流程
+**用途：**
+- 作为 .github/copilot-instructions.md 的素材
+- 可被多个项目复用
+- 可组合使用
 
-### 开发模式（本地调试）
+## 🔄 工作流程
 
-1. 修改配置文件（agents/, common/, vue/, industry/）
-2. 扩展检测到本地仓库路径（`/Users/pailasi/Work/copilot-prompts`）
-3. 优先从本地读取，GitHub 作为 fallback
+### 使用 MCP 服务（推荐）
 
-### 生产模式（发布后）
-
-1. 用户安装扩展
-2. 扩展自动从 GitHub (`ForLear/copilot-prompts`) 获取最新配置
-3. 应用到用户项目的 `.github/` 目录
-
-### 配置应用路径
-
-用户项目：
 ```
-your-project/
-└── .github/
-    ├── copilot-instructions.md   # 主配置（自动应用到所有对话）
-    └── agents/                    # Custom Agents（按需调用）
-        ├── vue3.agent.md
-        ├── typescript.agent.md
-        └── ...
+用户 → Claude/VS Code → MCP 服务器 → 分析项目
+                                    ↓
+                            匹配 Agents
+                                    ↓
+                            生成配置文件
 ```
 
-## .gitignore 策略
+### 手动配置
 
-### 项目级忽略
 ```
-.DS_Store                  # macOS 系统文件
-.vscode/, .idea/           # 编辑器配置
+用户 → 选择 Agents → 复制到项目 .github/ 目录
 ```
 
-### 扩展级忽略
-```
-vscode-extension/node_modules/   # 依赖包
-vscode-extension/out/             # 编译输出
-vscode-extension/*.vsix           # 打包文件
-```
+## 📝 文件类型
 
-## 清理记录
+### Agent 文件 (.agent.md)
 
-### v1.3.0 清理（2025-12-11）
+- 放置在 .github/agents/ 目录
+- 通过 @agent-name 调用
+- 支持指定 tools 列表
+- 可包含详细的开发规范
 
-**vscode-extension/ 清理**:
-- 删除根目录冗余文档（6个）
-- 删除旧版本 VSIX (v1.2.0)
-- 归档废弃脚本到 docs/archives/
-- 创建统一 CHANGELOG.md
-- 创建 scripts/build.sh
+### Prompt 文件 (.md)
 
-**根目录清理**:
-- 删除废弃脚本：apply-global.sh, sync-agents.sh
-- 删除临时文件：QUICK_REFERENCE.txt
-- 整理工具：agent-manager.html → tools/
-- 整理文档：DEPLOYMENT_SUMMARY.md, SETUP_COMPLETE.md → docs/
+- 放置在 .github/copilot-instructions.md
+- 自动应用到所有对话
+- 可组合多个规范文件
 
-**保留配置源**:
-- agents/, common/, vue/, industry/ 目录保持不变
-- 这些是 GitHub 仓库的核心内容，供扩展动态获取
+## 🚀 版本历史
+
+- **v2.0.0** - MCP 服务器优化，移除 VS Code 扩展
+- **v1.3.0** - 支持 VS Code 扩展
+- **v1.0.0** - 初始版本
 
 ---
 
-最后更新: 2025-12-11
-版本: v1.3.0 Open Source Edition
+**更新时间：** 2025-12-15

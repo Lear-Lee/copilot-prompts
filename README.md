@@ -1,20 +1,32 @@
 # Copilot Prompts 中央仓库
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/ForLear/copilot-prompts)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ForLear/copilot-prompts)
+[![MCP](https://img.shields.io/badge/MCP-1.1.0-green.svg)](mcp-server/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-集中管理各类项目的 AI 开发指令文件，用于 GitHub Copilot 和其他 AI 编程助手。
+集中管理各类项目的 AI 开发指令文件，通过 MCP 服务器智能分析项目并自动匹配最合适的 GitHub Copilot Agents。
+
+## 🎯 核心功能
+
+- **🤖 MCP 智能服务** - 自动分析项目技术栈，智能推荐配置
+- **📦 Agent 库** - 预置多种开发规范（Vue 3、TypeScript、i18n 等）
+- **⚡ 一键配置** - 自动生成 `.github/copilot-instructions.md`
+- **🔄 跨平台** - 支持 Claude Desktop、VS Code 等 MCP 客户端
 
 ## 📁 项目结构
 
 ```
 copilot-prompts/
+├── mcp-server/          # MCP 智能服务（核心）
+│   ├── src/             # 服务器源码
+│   ├── build/           # 编译输出
+│   └── README.md        # MCP 使用文档
 ├── agents/              # Custom Agents（VS Code 专用）
 │   ├── i18n.agent.md
 │   ├── typescript.agent.md
 │   ├── vitasage.agent.md
-│   ├── vue3.agent.md
-│   └── vscode-extension-dev.agent.md
+│   ├── logicflow.agent.md
+│   └── vue3.agent.md
 ├── common/              # 通用开发规范
 │   ├── i18n.md
 │   └── typescript-strict.md
@@ -22,34 +34,66 @@ copilot-prompts/
 │   └── vue3-typescript.md
 ├── industry/            # 行业专用配置
 │   └── vitasage-recipe.md
-├── vscode-extension/    # VS Code 扩展插件
-│   └── ...
-├── tools/               # 辅助工具
-│   └── agent-manager.html
-├── docs/                # 文档
-│   ├── AGENTS_GUIDE.md
-│   ├── BEST_PRACTICES.md
-│   └── MANAGER_GUIDE.md
-└── README.md
+└── docs/                # 文档
+    ├── AGENTS_GUIDE.md
+    ├── BEST_PRACTICES.md
+    └── MANAGER_GUIDE.md
 ```
 
 ## 🚀 快速开始
 
-### 方式 1: 使用 VS Code 扩展（推荐）
+### 方式 1: 使用 MCP 服务（推荐）
 
-1. 安装插件：
+**在 Claude Desktop 中使用：**
+
+1. **编译 MCP 服务器**
    ```bash
-   cd vscode-extension
+   cd mcp-server
    npm install
-   npm run compile
-   vsce package
-   code --install-extension copilot-prompts-manager-*.vsix
+   npm run build
    ```
 
-2. 使用插件：
-   - 打开 VS Code 侧边栏 "Copilot Prompts" 视图
-   - 勾选需要的 agents 和 prompts
-   - 点击"应用到项目"按钮
+2. **配置 Claude Desktop**
+   
+   编辑 `~/Library/Application Support/Claude/claude_desktop_config.json`：
+   ```json
+   {
+     "mcpServers": {
+       "copilot-prompts": {
+         "command": "node",
+         "args": ["/绝对路径/copilot-prompts/mcp-server/build/index.js"]
+       }
+     }
+   }
+   ```
+
+3. **重启 Claude Desktop 并使用**
+   ```
+   帮我分析 /path/to/my-project 并生成 Copilot 配置
+   ```
+
+详见：[mcp-server/README.md](mcp-server/README.md)
+
+**在 VS Code 中使用：**
+
+1. **配置 VS Code MCP**
+   
+   创建 `.vscode/mcp.json`：
+   ```json
+   {
+     "mcpServers": {
+       "copilot-prompts": {
+         "command": "node",
+         "args": ["/绝对路径/copilot-prompts/mcp-server/build/index.js"]
+       }
+     }
+   }
+   ```
+
+2. **在 Copilot Chat 中使用**
+   ```
+   @vue3 分析当前项目并推荐配置
+   ```
 
 ### 方式 2: 手动配置
 
@@ -76,7 +120,7 @@ cp copilot-prompts/agents/*.agent.md .github/agents/
 - `vue3.agent.md` - Vue 3 + Composition API
 - `typescript.agent.md` - TypeScript 严格模式
 - `i18n.agent.md` - 国际化最佳实践
-- `vscode-extension-dev.agent.md` - VS Code 扩展开发
+- `logicflow.agent.md` - LogicFlow 流程图开发
 
 ### Prompts（通用配置）
 
@@ -87,23 +131,52 @@ cp copilot-prompts/agents/*.agent.md .github/agents/
 - `common/i18n.md` - 国际化规范
 - `industry/vitasage-recipe.md` - VitaSage 专用配置
 
-## 🛠️ VS Code 扩展功能
+## 🔧 MCP 工具列表
 
-- ✅ 可视化选择配置
-- ✅ 一键应用到项目
-- ✅ 自动从 GitHub 获取最新配置
-- ✅ 支持多工作区
-- ✅ 配置验证和问题检查
-- ✅ 清空项目配置
+MCP 服务器提供以下智能工具：
 
-详见：[vscode-extension/README.md](vscode-extension/README.md)
+| 工具名称 | 功能描述 |
+|---------|---------|
+| `analyze_project` | 分析项目技术栈（Vue、React、TypeScript 等） |
+| `match_agents` | 根据项目特征智能匹配最合适的 Agents |
+| `list_available_agents` | 列出所有可用的 Agents |
+| `generate_config` | 一键生成 `.github/copilot-instructions.md` |
 
 ## 📚 文档
 
+- [MCP 服务器使用指南](mcp-server/README.md)
+- [快速开始指南](mcp-server/GETTING_STARTED.md)
 - [Agents 使用指南](AGENTS_GUIDE.md)
 - [最佳实践](BEST_PRACTICES.md)
-- [配置管理器使用](MANAGER_GUIDE.md)
-- [VS Code 扩展文档](vscode-extension/README.md)
+
+## 💡 使用示例
+
+### Claude Desktop 示例
+
+```
+你：分析 /Users/username/my-vue-project 项目
+
+Claude：[调用 analyze_project 工具]
+检测到 Vue 3 项目，使用 Vite、TypeScript、Pinia...
+
+你：为这个项目生成 Copilot 配置
+
+Claude：[调用 generate_config 工具]
+已生成配置文件，应用了以下 Agents：
+- Vue 3 开发规范
+- TypeScript 严格模式
+- 国际化规范
+```
+
+### VS Code Copilot Chat 示例
+
+```
+@vue3 分析当前项目并推荐合适的开发规范
+
+@typescript 帮我检查类型安全问题
+
+@i18n 确保所有文本都已国际化
+```
 
 ## 🤝 贡献
 
@@ -119,8 +192,16 @@ cp copilot-prompts/agents/*.agent.md .github/agents/
 
 - Agents 文件命名：`xxx.agent.md`
 - Prompts 文件命名：`xxx.md`
-- 必须包含 YAML frontmatter（description, tools 等）
+- 必须包含 YAML frontmatter（description, tags 等）
 - 内容清晰、示例完整
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## ⭐ Star History
+
+如果这个项目对你有帮助，欢迎 Star！
 
 ## 📄 许可
 

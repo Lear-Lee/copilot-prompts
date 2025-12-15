@@ -50,11 +50,23 @@ export interface Logger {
  * 控制台日志实现
  */
 export class ConsoleLogger implements Logger {
+    private enableDebug: boolean;
+
+    constructor(enableDebug: boolean = false) {
+        this.enableDebug = enableDebug;
+    }
+
     log(message: string): void {
-        console.log(`[INFO] ${message}`);
+        console.error(`[INFO] ${message}`);
     }
     
     error(message: string): void {
         console.error(`[ERROR] ${message}`);
+    }
+
+    debug(message: string): void {
+        if (this.enableDebug) {
+            console.error(`[DEBUG] ${message}`);
+        }
     }
 }
