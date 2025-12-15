@@ -144,10 +144,14 @@ MCP 服务器提供以下智能工具：
 
 ## 📚 文档
 
-- [MCP 服务器使用指南](mcp-server/README.md)
-- [快速开始指南](mcp-server/GETTING_STARTED.md)
-- [Agents 使用指南](AGENTS_GUIDE.md)
-- [最佳实践](BEST_PRACTICES.md)
+- [快速开始指南](QUICK_START.md) - 5分钟上手 MCP
+- [MCP 使用演示](docs/MCP_USAGE_DEMO.md) - 🆕 完整实战演示，从零到精通
+- [项目结构说明](STRUCTURE.md) - 了解目录组织
+- [测试指南](TEST_GUIDE_v2.0.md) - 如何测试 MCP 服务
+- [项目组织规范](.project-rules.md) - 🆕 文件管理规范
+- [MCP 服务器使用指南](mcp-server/README.md) - 详细配置说明
+- [Agents 使用指南](AGENTS_GUIDE.md) - Custom Agents 指南
+- [最佳实践](BEST_PRACTICES.md) - 编码规范建议
 
 ## 💡 使用示例
 
