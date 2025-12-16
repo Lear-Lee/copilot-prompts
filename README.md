@@ -17,17 +17,26 @@
 
 ```
 copilot-prompts/
+├── setup-copilot.sh     # 🚀 一键配置脚本
 ├── mcp-server/          # MCP 智能服务（核心）
 │   ├── src/             # 服务器源码
 │   ├── build/           # 编译输出
 │   └── README.md        # MCP 使用文档
+├── configs/             # 团队自定义配置
+│   ├── element-plus-vitasage.json
+│   └── README.md
+├── standards/           # MCP 规范库（模块化）
+│   ├── core/            # 核心规范
+│   ├── frameworks/      # 框架规范
+│   ├── libraries/       # 库规范
+│   └── patterns/        # 设计模式
 ├── agents/              # Custom Agents（VS Code 专用）
 │   ├── i18n.agent.md
 │   ├── typescript.agent.md
 │   ├── vitasage.agent.md
 │   ├── logicflow.agent.md
 │   └── vue3.agent.md
-├── common/              # 通用开发规范
+├── common/              # 通用开发规范（兼容旧版）
 │   ├── i18n.md
 │   └── typescript-strict.md
 ├── vue/                 # Vue 相关配置
@@ -35,14 +44,25 @@ copilot-prompts/
 ├── industry/            # 行业专用配置
 │   └── vitasage-recipe.md
 └── docs/                # 文档
-    ├── AGENTS_GUIDE.md
-    ├── BEST_PRACTICES.md
-    └── MANAGER_GUIDE.md
+    └── MCP_USAGE_DEMO.md
 ```
 
 ## 🚀 快速开始
 
-### 方式 1: 使用 MCP 服务（推荐）
+### 方式 1: 一键配置脚本 ⚡（最简单）
+
+```bash
+# 自动分析项目并生成配置
+./setup-copilot.sh -a /path/to/your-project
+
+# 使用指定配置方案
+./setup-copilot.sh -c vitasage /path/to/VitaSage
+
+# 列出所有可用配置
+./setup-copilot.sh -l
+```
+
+### 方式 2: 使用 MCP 服务（功能最强）
 
 **在 Claude Desktop 中使用：**
 
@@ -95,7 +115,7 @@ copilot-prompts/
    @vue3 分析当前项目并推荐配置
    ```
 
-### 方式 2: 手动配置
+### 方式 3: 手动配置
 
 复制配置文件到项目：
 

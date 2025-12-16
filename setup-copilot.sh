@@ -64,15 +64,15 @@ list_configs() {
     print_header "可用配置方案"
     
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    STANDARDS_DIR="$(dirname "$SCRIPT_DIR")/standards"
+    CONFIGS_DIR="$SCRIPT_DIR/configs"
     
     echo "通用配置:"
     echo "  - standard      Element Plus 标准配置"
     echo ""
     
     echo "项目配置:"
-    if [ -d "$STANDARDS_DIR/libraries/configs" ]; then
-        for config in "$STANDARDS_DIR/libraries/configs"/*.json; do
+    if [ -d "$CONFIGS_DIR" ]; then
+        for config in "$CONFIGS_DIR"/*.json; do
             if [ -f "$config" ]; then
                 config_name=$(basename "$config" .json)
                 config_id=$(echo "$config_name" | sed 's/element-plus-//')

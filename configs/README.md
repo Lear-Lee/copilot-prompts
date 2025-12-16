@@ -1,33 +1,30 @@
-# Element Plus 配置管理
+# Copilot Prompts 配置文件
 
-本目录存储不同项目/团队的 Element Plus 使用习惯配置。
+存放各团队/项目的自定义编码规范配置。
 
 ## 📁 配置文件列表
 
-### 预设配置
+- **element-plus-vitasage.json** - VitaSage 团队 Element Plus 配置
 
-- **element-plus-vitasage.json** - VitaSage 工业配方系统配置
-  - 严格国际化、统一表格样式
-  - 100% border + highlight-current-row
-  - 90% link 操作按钮
+## 🎯 使用配置
 
-### 自定义配置
+### 使用自动配置脚本（推荐）
 
-通过 MCP 工具生成的自定义配置将保存在此目录：
+```bash
+# 使用 vitasage 配置
+../setup-copilot.sh -c vitasage /path/to/project
 
-```
-configs/
-├── element-plus-vitasage.json       # 预设配置
-├── element-plus-{your-project}.json  # 自动生成的配置
-└── README.md                         # 本文件
+# 列出所有可用配置
+../setup-copilot.sh -l
 ```
 
-## 🛠️ 生成自定义配置
+### 在项目中声明配置
 
-### 方法 1: 使用 MCP 工具
+在项目的 `.github/copilot-instructions.md` 中：
 
-```typescript
-// 分析项目并生成配置
+```markdown
+**Element Plus 配置方案**: `vitasage`
+```
 await mcp_copilot-promp_analyze_element_plus_usage({
   projectPath: "/path/to/your/project",
   outputConfigId: "my-company"  // 可选，默认自动生成
