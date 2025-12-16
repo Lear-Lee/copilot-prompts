@@ -384,6 +384,28 @@ const { count } = reactive({ count: 0 })  // 失去响应式
 5. **禁止内联样式**: 始终使用 scoped CSS 或 class
 6. **类型安全**: Props/Emits 必须有 TypeScript 类型
 7. **响应式陷阱**: 避免解构 reactive,避免重新赋值 reactive
+
+---
+
+## ⚠️ 重要：配置文件管理
+
+### Copilot 配置 .gitignore
+
+**推荐做法：**将自动生成的 `.github/copilot-instructions.md` 添加到 `.gitignore`
+
+```gitignore
+# Copilot 配置(自动生成)
+.github/copilot-instructions.md
+```
+
+**原因：**
+- ✅ 避免团队配置冲突
+- ✅ 保持仓库清洁
+- ✅ 允许个性化配置
+
+**替代方案：**提交 `.github/copilot-instructions.template.md` 作为团队参考模板
+
+**详细指南**: 参考 [Copilot .gitignore 通用指南](../../docs/guides/COPILOT_GITIGNORE_GUIDE.md)
   methods: {
     increment() {
       this.count++

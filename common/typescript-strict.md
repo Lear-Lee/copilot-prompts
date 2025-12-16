@@ -163,3 +163,24 @@ if (isUser(data)) {
   console.log(data.name)  // TypeScript 知道 data 是 User
 }
 ```
+
+---
+
+## ⚠️ 重要：配置文件管理
+
+### Copilot 配置 .gitignore
+
+**推荐做法：**将自动生成的 `.github/copilot-instructions.md` 添加到 `.gitignore`
+
+```gitignore
+# Copilot 配置(自动生成)
+.github/copilot-instructions.md
+```
+
+**适用项目：**
+- TypeScript 应用（React、Vue、Angular）
+- Node.js 后端服务
+- TypeScript 工具库
+- 所有使用 TypeScript 的项目
+
+**详细指南**: 参考 [Copilot .gitignore 通用指南](../docs/guides/COPILOT_GITIGNORE_GUIDE.md)

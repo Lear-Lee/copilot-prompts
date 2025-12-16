@@ -275,5 +275,31 @@ get_relevant_standards({
 
 ---
 
+## ⚙️ 项目配置优化
+
+### .gitignore 配置
+
+**重要**: 自动生成的 `.github/copilot-instructions.md` 不应提交到版本控制。
+
+在你的 Flutter 项目根目录的 `.gitignore` 中添加:
+
+```gitignore
+# Copilot 配置（自动生成，不提交）
+.github/copilot-instructions.md
+```
+
+**原因**:
+- ✅ 该文件由 MCP 工具自动生成
+- ✅ 不同开发者可能需要不同的配置
+- ✅ 避免团队协作时的配置冲突
+- ✅ 保持仓库清洁
+
+**推荐做法**:
+1. 将 `.github/copilot-instructions.md` 添加到 `.gitignore`
+2. 在项目 README 中说明如何生成配置
+3. 可选: 提供 `.github/copilot-instructions.template.md` 作为模板
+
+---
+
 **创建日期**: 2025-12-16  
 **维护团队**: MTA团队(蘑菇与吐司的AI团队)

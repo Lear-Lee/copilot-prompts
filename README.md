@@ -173,12 +173,20 @@ MCP 服务器提供以下智能工具：
 - [Agents 使用指南](docs/guides/AGENTS_GUIDE.md) - Custom Agents 指南
 - [最佳实践](docs/guides/BEST_PRACTICES.md) - 编码规范建议
 - [MCP 服务器文档](mcp-server/README.md) - MCP 详细配置说明
+- **[Copilot .gitignore 通用指南](docs/guides/COPILOT_GITIGNORE_GUIDE.md)** - 配置文件管理最佳实践 🆕
+
+### Flutter 开发指南 (新增) 🎯
+- [Flutter 快速指南](docs/guides/FLUTTER_GUIDE.md) - Flutter/Dart 标准使用
+- [Flutter 配置总结](docs/guides/FLUTTER_SETUP_SUMMARY.md) - 完整配置说明
+- [.gitignore 优化详解](docs/guides/GITIGNORE_OPTIMIZATION.md) - 配置文件管理详解
+- [快速参考卡片](docs/guides/GITIGNORE_QUICK_REFERENCE.md) - 一页纸参考
 
 ### 开发参考
 - [项目结构说明](docs/development/STRUCTURE.md) - 了解目录组织
 - [测试指南](docs/development/TEST_GUIDE_v2.0.md) - 如何测试 MCP 服务
 - [更新日志](docs/development/CHANGELOG.md) - 版本历史记录
 - [项目管理规范](docs/PROJECT_RULES.md) - 文件组织和维护规则 ⭐
+
 
 ## 💡 使用示例
 

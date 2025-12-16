@@ -1,5 +1,59 @@
 # Copilot Prompts 更新日志
 
+## v2.1.0 (2025-12-16)
+
+### 🎉 新增 Flutter/Dart 支持
+
+#### 新增标准规范
+- ✨ 添加 `standards/core/dart-base.md` - Dart 语言核心规范 (12KB)
+- ✨ 添加 `standards/frameworks/flutter.md` - Flutter 框架规范 (22KB)
+- ✨ 基于 Flutter 官方 Style Guide 和 Effective Dart
+- ✨ 涵盖 Widget 设计、状态管理、性能优化
+
+#### 新增 Agent
+- ✨ 添加 `agents/flutter.agent.md` - Flutter 开发专家 Agent (14KB)
+- ✨ 支持 Clean Architecture、测试、调试
+- ✨ 包含完整的 MCP 工作流强制要求
+
+#### 新增配置
+- ✨ 添加 `configs/flutter-recipe.md` - Flutter 项目完整配置指南
+- ✨ 支持 BLoC、Provider、Riverpod 状态管理
+- ✨ 集成 Dio、go_router、local_auth 等常用包
+
+#### 文档优化
+- 📝 添加 `docs/guides/FLUTTER_GUIDE.md` - Flutter 快速指南
+- 📝 添加 `docs/guides/FLUTTER_SETUP_SUMMARY.md` - 配置总结
+- 📝 添加 `docs/guides/COPILOT_GITIGNORE_GUIDE.md` - 通用 .gitignore 指南 🌟
+- 📝 添加 `docs/guides/GITIGNORE_OPTIMIZATION.md` - 配置优化详解
+- 📝 添加 `docs/guides/GITIGNORE_QUICK_REFERENCE.md` - 快速参考
+
+### 🔧 配置文件管理优化
+
+#### .gitignore 最佳实践
+- ✨ 为所有语言/框架添加 .gitignore 配置说明
+- ✨ 更新 `standards/frameworks/vue3-composition.md` - 添加配置管理章节
+- ✨ 更新 `common/typescript-strict.md` - 添加配置管理章节
+- ✨ 更新 `common/i18n.md` - 添加配置管理章节
+- ✨ 通用指南支持 JavaScript、Python、Java、Go、Rust、C#、Ruby、PHP
+
+#### 项目模板
+- ✨ 为 my_flutter 项目生成完整配置
+- ✨ 添加 `.github/copilot-instructions.template.md`
+- ✨ 添加 `.github/README.md` 配置说明
+- ✨ 更新 `.gitignore` 排除自动生成的配置文件
+
+#### VitaSage 项目更新
+- ✨ 创建 `.github/copilot-instructions.template.md`
+- ✨ 添加 `.github/README.md` 团队配置指南
+- ✨ 已有 `.gitignore` 配置确认
+
+### 📋 文档结构优化
+- 🔧 修正根目录文件组织问题（遵循项目规范）
+- 🔧 所有 Flutter 相关文档正确放置在 `docs/guides/`
+- 🔧 更新 README.md 文档导航，新增 Flutter 章节
+
+---
+
 ## v2.0.0 (2025-12-15)
 
 ### 🎉 重大更新

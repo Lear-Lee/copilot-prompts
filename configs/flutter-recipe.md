@@ -18,6 +18,32 @@
 
 ---
 
+## ⚠️ 重要：配置文件管理
+
+### .gitignore 设置
+
+**必须添加**: 自动生成的 Copilot 配置不应提交到版本控制
+
+在 Flutter 项目的 `.gitignore` 中添加:
+
+```gitignore
+# Copilot 自动生成配置
+.github/copilot-instructions.md
+```
+
+**原因**:
+- 该文件由 MCP 工具自动生成
+- 不同开发者可能有不同的配置需求
+- 避免团队协作冲突
+- 保持版本控制清洁
+
+**推荐实践**:
+1. 提交 `.github/copilot-instructions.template.md` 作为参考模板
+2. 在 README 中说明配置生成方法
+3. 每个开发者独立生成自己的配置
+
+---
+
 ## 🎯 核心规范
 
 ### 必须加载的规范
