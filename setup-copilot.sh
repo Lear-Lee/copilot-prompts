@@ -421,10 +421,52 @@ main() {
     echo "  - $project_path/.vscode/settings.json"
     echo "  - $project_path/.github/copilot-instructions.md"
     echo ""
-    print_info "下一步："
-    echo "  1. 重启 VS Code (Cmd+Shift+P → Reload Window)"
-    echo "  2. 在 Copilot Chat 中使用 MCP 工具"
-    echo "  3. AI 将自动遵循项目规范生成代码"
+    
+    print_warning "⚠️  重要：MCP 配置不会立即生效"
+    echo ""
+    
+    print_info "🔄 让配置生效的方法："
+    echo ""
+    echo "【方法1】重新加载 VS Code 窗口（推荐）"
+    echo "  1. 按 Cmd+Shift+P (macOS) 或 Ctrl+Shift+P (Windows)"
+    echo "  2. 输入 'Reload Window'"
+    echo "  3. 按回车"
+    echo ""
+    
+    echo "【方法2】完全重启 VS Code"
+    echo "  1. 完全退出 VS Code (Cmd+Q)"
+    echo "  2. 重新打开项目"
+    echo ""
+    
+    echo "【方法3】使用快捷命令（自动执行）"
+    read -p "是否立即重新加载 VS Code 窗口？(y/N): " reload_choice
+    if [[ "$reload_choice" =~ ^[Yy]$ ]]; then
+        print_info "正在尝试重新加载 VS Code..."
+        # 检测当前是否在 VS Code 终端中运行
+        if [ -n "$VSCODE_PID" ] || [ -n "$TERM_PROGRAM" ]; then
+            # 通过 code 命令重新加载窗口
+            if command -v code &> /dev/null; then
+                code --reuse-window "$project_path"
+                print_success "已发送重载命令到 VS Code"
+            else
+                print_warning "未找到 code 命令，请手动重载窗口"
+            fi
+        else
+            print_warning "未检测到 VS Code 环境，请手动重载窗口"
+        fi
+    fi
+    echo ""
+    
+    print_info "✅ 验证 MCP 是否生效："
+    echo "  1. 打开 Copilot Chat (Cmd/Ctrl + Shift + I)"
+    echo "  2. 输入: '@workspace 列出可用的编码规范工具'"
+    echo "  3. 应该能看到 get_relevant_standards 等工具"
+    echo ""
+    
+    print_info "💡 使用示例："
+    echo "  - 在 Vue 文件中，Copilot 会自动获取 Vue3 规范"
+    echo "  - 在 TypeScript 文件中，会自动获取 TS 规范"
+    echo "  - Chat 提问会自动应用项目配置"
     echo ""
 }
 
