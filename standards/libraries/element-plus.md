@@ -1,14 +1,227 @@
 # Element Plus 组件库使用规范
 
-> 基于 Element Plus 2.x 版本的最佳实践指南
+> 基于 Element Plus 2.x 版本的最佳实践指南  
+> 支持多套开发习惯配置
 
-## 🎯 核心原则
+---
 
-1. **按需导入** - 减小打包体积
-2. **类型安全** - 充分利用 TypeScript 类型
-3. **国际化优先** - 所有文本使用 i18n
-4. **响应式设计** - 合理使用 v-loading、v-model
-5. **用户体验** - 提供清晰的反馈和确认
+## 🎛️ 配置方案选择
+
+本规范支持以下开发习惯配置方案，请根据项目选择：
+
+### 📌 预设方案
+
+| 方案名称 | 适用场景 | 特点 |
+|---------|---------|------|
+| **标准方案** | 新项目、通用场景 | Element Plus 官方推荐配置 |
+| **VitaSage 方案** | 工业配方系统 | 严格国际化、统一 border 表格 |
+| **自定义方案** | 特定项目 | 基于项目自动分析生成 |
+
+### 🔧 如何选择方案
+
+#### 方式 1: 在项目 copilot-instructions.md 中声明
+
+```markdown
+<!-- 在 .github/copilot-instructions.md 中添加 -->
+## Element Plus 配置方案
+
+使用方案: **VitaSage**  
+<!-- 或使用自定义配置 ID -->
+```
+
+#### 方式 2: 通过 MCP 工具切换
+
+```typescript
+// 调用 MCP 工具
+get_relevant_standards({ 
+  imports: ["element-plus"],
+  config: "vitasage"  // 或 "standard", "custom-xxx"
+})
+```
+
+#### 方式 3: 自动生成配置
+
+```typescript
+// 基于当前项目自动分析生成配置
+mcp_copilot-promp_analyze_project({ 
+  projectPath: "/path/to/project",
+  generateElementPlusConfig: true
+})
+```
+
+---
+
+## 📋 方案对比表
+
+| 配置项 | 标准方案 | VitaSage 方案 | 说明 |
+|-------|---------|--------------|------|
+| **表格边框** | 可选 | `border` 必须 | 100% 使用 |
+| **表格高亮** | 推荐 | `highlight-current-row` 必须 | 100% 使用 |
+| **弹窗销毁** | 推荐 | `destroy-on-close` 必须 | 95% 使用 |
+| **表单标签** | `right` | `top` | 80% 使用顶部标签 |
+| **操作按钮** | 实心按钮 | `link` 按钮 | 90% 使用链接样式 |
+| **反馈组件** | 对象形式 | 方法形式 | 95% 用 `.success()` |
+| **国际化** | 推荐 | 强制 `$t()` | 100% 强制 |
+
+---
+
+## 🎯 核心原则（所有方案通用）
+
+1. **类型安全** - 充分利用 TypeScript 类型定义
+2. **用户反馈** - 提供清晰的 Loading 和操作确认
+3. **响应式设计** - 合理使用 v-loading、v-model
+
+---
+
+## 📦 配置方案详解
+
+### 🔷 方案一：标准方案 (Standard)
+
+适用于遵循 Element Plus 官方推荐的通用项目。
+
+```yaml
+配置ID: standard
+特点:
+  - 表格: 可选 border，推荐 stripe
+  - 按钮: 常规实心按钮
+  - 弹窗: 推荐但不强制 destroy-on-close
+  - 表单: label-position="right" (默认)
+  - 反馈: ElMessage 对象形式和方法形式均可
+  - 国际化: 推荐但不强制
+```
+
+**典型代码风格**：
+```vue
+<el-table :data="list" stripe>
+  <el-table-column prop="name" label="名称" />
+  <el-table-column label="操作">
+    <template #default>
+      <el-button type="primary" size="small">编辑</el-button>
+    </template>
+  </el-table-column>
+</el-table>
+```
+
+---
+
+### 🔷 方案二：VitaSage 方案
+
+基于工业配方管理系统的实际使用习惯，强调严格性和一致性。
+
+```yaml
+配置ID: vitasage
+特点:
+  - 表格: 必须 border + highlight-current-row (100%)
+  - 按钮: 操作列统一 link 样式 (90%)
+  - 弹窗: 必须 destroy-on-close (95%)
+  - 表单: label-position="top" (80%)
+  - 反馈: 强制方法形式 ElMessage.success() (95%)
+  - 国际化: 强制所有文本使用 $t() (100%)
+  - Loading: 统一命名 listLoading/operaLoading
+```
+
+**典型代码风格**：
+```vue
+<!-- ✅ VitaSage 方案标准模板 -->
+<el-table 
+  v-loading="listLoading" 
+  :data="list" 
+  border 
+  highlight-current-row
+>
+  <el-table-column type="index" :label="$t('序号')" width="70" />
+  <el-table-column prop="name" :label="$t('名称')" min-width="120" />
+  <el-table-column fixed="right" :label="$t('操作')" width="200">
+    <template #default="scope">
+      <el-button link type="primary" @click="edit(scope.row)">
+        {{ $t('编辑') }}
+      </el-button>
+      <el-button link type="danger" @click="del(scope.row)">
+        {{ $t('删除') }}
+      </el-button>
+    </template>
+  </el-table-column>
+</el-table>
+```
+
+**宽度规范**：
+| 列类型 | 宽度 |
+|-------|------|
+| 序号/ID | `width="70"` |
+| 状态 | `width="100"` |
+| 时间 | `width="180"` |
+| 操作(2按钮) | `width="200"` |
+| 短文本 | `min-width="120"` |
+| 中等文本 | `min-width="180"` |
+| 长文本 | `min-width="250"` |
+
+---
+
+### 🔷 方案三：自定义方案
+
+通过 MCP 工具自动分析项目生成专属配置。
+
+#### 生成自定义配置
+
+```typescript
+// 1. 分析项目并生成配置
+const result = await mcp_copilot-promp_analyze_element_plus_usage({
+  projectPath: "/Users/xxx/my-project",
+  outputConfigId: "my-company-standard"  // 可选，自动生成
+})
+
+// 2. 配置会保存到
+// copilot-prompts/standards/libraries/configs/element-plus-my-company-standard.json
+
+// 3. 在项目中引用
+// .github/copilot-instructions.md:
+// Element Plus 配置: my-company-standard
+```
+
+#### 自定义配置结构示例
+
+```json
+{
+  "configId": "my-company-standard",
+  "name": "我司标准配置",
+  "analyzedFrom": "/Users/xxx/my-project",
+  "analyzedAt": "2025-12-16",
+  "rules": {
+    "table": {
+      "border": { "required": true, "frequency": 100 },
+      "stripe": { "required": false, "frequency": 20 },
+      "highlight-current-row": { "required": true, "frequency": 95 },
+      "v-loading": { "required": true, "variable": "loading" }
+    },
+    "button": {
+      "operationColumn": {
+        "style": "link",
+        "frequency": 85
+      }
+    },
+    "dialog": {
+      "destroy-on-close": { "required": true, "frequency": 90 },
+      "widths": {
+        "simple": "500px",
+        "standard": "700px",
+        "complex": "900px"
+      }
+    },
+    "form": {
+      "label-position": "top",
+      "frequency": 75
+    },
+    "message": {
+      "preferredStyle": "method",
+      "frequency": 88
+    },
+    "i18n": {
+      "required": true,
+      "function": "$t"
+    }
+  }
+}
+```
 
 ---
 
@@ -50,133 +263,100 @@ app.use(ElementPlus, {
 
 ## 📋 表单 (el-form)
 
-### 基础表单与验证
+### ✅ 标准表单结构（团队约定）
 
 ```vue
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, getCurrentInstance } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { getCurrentInstance } from 'vue'
 
-// ✅ 国际化
+// 国际化（必须）
 const { appContext } = getCurrentInstance()!
 const $t = appContext.config.globalProperties.$t
 
 interface FormData {
   name: string
   email: string
-  age: number
-  status: 'active' | 'inactive'
+  remark?: string
 }
 
 const formRef = ref<FormInstance>()
-
 const form = reactive<FormData>({
   name: '',
   email: '',
-  age: 0,
-  status: 'active'
+  remark: ''
 })
 
-// ✅ 验证规则使用国际化
+// 验证规则
 const rules: FormRules<FormData> = {
   name: [
-    { required: true, message: $t('请输入姓名'), trigger: 'blur' },
-    { min: 2, max: 20, message: $t('长度在 2 到 20 个字符'), trigger: 'blur' }
+    { required: true, message: $t('请输入名称'), trigger: 'blur' },
+    { min: 2, max: 50, message: $t('长度在 2 到 50 个字符'), trigger: 'blur' }
   ],
   email: [
     { required: true, message: $t('请输入邮箱'), trigger: 'blur' },
-    { type: 'email', message: $t('请输入正确的邮箱'), trigger: 'blur' }
-  ],
-  age: [
-    { required: true, message: $t('请输入年龄'), trigger: 'blur' },
-    { type: 'number', min: 0, max: 150, message: $t('年龄必须在0-150之间'), trigger: 'blur' }
+    { type: 'email', message: $t('请输入正确的邮箱格式'), trigger: 'blur' }
   ]
 }
 
-// ✅ 标准提交模式
+// ✅ 标准提交流程
 const submitForm = async () => {
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
-    // 验证通过，执行提交
-    console.log('Submit:', form)
-    ElMessage.success($t('提交成功'))
+    // 执行提交逻辑
+    ElMessage.success($t('保存成功'))
   } catch (error) {
     console.error('验证失败:', error)
-    ElMessage.warning($t('请检查表单'))
   }
-}
-
-const resetForm = () => {
-  formRef.value?.resetFields()
 }
 </script>
 
 <template>
+  <!-- ✅ 团队约定：label-position="top" -->
   <el-form
     ref="formRef"
     :model="form"
     :rules="rules"
-    label-width="120px"
-    label-position="right"
+    label-position="top"
   >
-    <!-- ✅ 所有 label 使用 $t() -->
-    <el-form-item :label="$t('姓名')" prop="name">
+    <!-- ✅ 所有 label 和 placeholder 使用 $t() -->
+    <el-form-item :label="$t('名称')" prop="name">
       <el-input 
         v-model="form.name" 
-        :placeholder="$t('请输入姓名')" 
+        :placeholder="$t('请输入名称')" 
       />
     </el-form-item>
     
     <el-form-item :label="$t('邮箱')" prop="email">
       <el-input 
         v-model="form.email" 
-        type="email"
         :placeholder="$t('请输入邮箱')" 
       />
     </el-form-item>
     
-    <el-form-item :label="$t('年龄')" prop="age">
-      <el-input-number 
-        v-model="form.age" 
-        :min="0" 
-        :max="150" 
+    <el-form-item :label="$t('备注')">
+      <el-input 
+        v-model="form.remark" 
+        :placeholder="$t('请输入备注')" 
       />
-    </el-form-item>
-    
-    <el-form-item>
-      <el-button type="primary" @click="submitForm">
-        {{ $t('提交') }}
-      </el-button>
-      <el-button @click="resetForm">
-        {{ $t('重置') }}
-      </el-button>
     </el-form-item>
   </el-form>
 </template>
 ```
 
-### 自定义验证规则
+### 表单布局选择
 
-```typescript
-// 自定义验证器
-const validatePhone = (rule: any, value: string, callback: any) => {
-  if (!value) {
-    callback(new Error($t('请输入手机号')))
-  } else if (!/^1[3-9]\d{9}$/.test(value)) {
-    callback(new Error($t('请输入正确的手机号')))
-  } else {
-    callback()
-  }
-}
+```vue
+<!-- ✅ 推荐：顶部标签（移动端友好） -->
+<el-form label-position="top">
+  
+<!-- 可选：右对齐标签（桌面端） -->
+<el-form label-position="right" label-width="120px">
 
-const rules = {
-  phone: [
-    { validator: validatePhone, trigger: 'blur' }
-  ]
-}
+<!-- 可选：左对齐标签 -->
+<el-form label-position="left" label-width="120px">
 ```
 
 ---
