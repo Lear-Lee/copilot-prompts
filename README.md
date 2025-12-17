@@ -141,6 +141,8 @@ cp copilot-prompts/agents/*.agent.md .github/agents/
 - `typescript.agent.md` - TypeScript 严格模式
 - `i18n.agent.md` - 国际化最佳实践
 - `logicflow.agent.md` - LogicFlow 流程图开发
+- `wechat-miniprogram.agent.md` - 微信小程序开发 🆕
+- `flutter.agent.md` - Flutter/Dart 开发
 
 ### Prompts（通用配置）
 
@@ -180,6 +182,9 @@ MCP 服务器提供以下智能工具：
 - [Flutter 配置总结](docs/guides/FLUTTER_SETUP_SUMMARY.md) - 完整配置说明
 - [.gitignore 优化详解](docs/guides/GITIGNORE_OPTIMIZATION.md) - 配置文件管理详解
 - [快速参考卡片](docs/guides/GITIGNORE_QUICK_REFERENCE.md) - 一页纸参考
+
+### 微信小程序开发指南 (新增) 🆕
+- [微信小程序开发指南](docs/guides/WECHAT_MINIPROGRAM_GUIDE.md) - 小程序开发规范和最佳实践
 
 ### 开发参考
 - [项目结构说明](docs/development/STRUCTURE.md) - 了解目录组织

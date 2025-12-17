@@ -1,5 +1,55 @@
 # Copilot Prompts 更新日志
 
+## v2.2.0 (2025-12-17)
+
+### 🎉 新增微信小程序支持（含云开发）
+
+#### 新增标准规范
+- ✨ 添加 `standards/frameworks/wechat-miniprogram.md` - 微信小程序开发规范 (30KB)
+- ✨ 基于微信官方文档和优质开源项目最佳实践
+- ✨ 涵盖 Page/Component 开发、网络请求、**云开发**、本地存储、性能优化、安全规范
+
+#### 新增 Agent
+- ✨ 添加 `agents/wechat-miniprogram.agent.md` - 微信小程序开发专家 Agent (12KB)
+- ✨ 包含完整的 MCP 工作流强制要求
+- ✨ 支持页面/组件开发、网络请求封装、**云开发场景**、安全规范
+
+#### MCP 服务器增强
+- ✨ StandardsManager 支持自动识别微信小程序文件类型 (.wxml, .wxss, .wxs)
+- ✨ 支持识别 wx API 调用和小程序关键词
+- ✨ **支持云开发关键词识别**（云函数、云数据库、云存储、wx.cloud）
+- ✨ 支持场景匹配（小程序页面开发、组件开发、**云开发场景**等）
+- ✨ 添加完整的测试脚本 `test-miniprogram.cjs`
+
+#### 规范特性
+- 📋 完整的项目结构建议（pages/、components/、utils/、api/、**cloudfunctions/** 等）
+- 📋 Page 和 Component 生命周期规范
+- 🌐 网络请求统一封装（错误处理、Token 鉴权、Loading 管理）
+- ☁️ **云开发规范**（云函数、云数据库、云存储、云 API 调用）
+  - 云函数结构和错误处理
+  - 云数据库 CRUD 操作和查询优化
+  - 云存储文件上传/下载管理
+  - 云 API 调用（订阅消息、小程序码生成）
+  - 云开发最佳实践和安全规则
+- 💾 本地存储规范（加密存储、命名规范）
+- 🎯 性能优化（setData 优化、列表渲染、代码分包、**云数据库优化**）
+- 🔐 安全规范（敏感信息处理、XSS 防护、接口鉴权、**云安全规则**）
+- 📱 用户体验规范（加载状态、错误提示、交互反馈）
+
+#### 文档更新
+- 📝 更新 `standards/README.md` - 添加微信小程序规范索引
+- 📝 更新 `README.md` - 添加小程序 Agent 到列表
+- 📝 更新 `docs/guides/WECHAT_MINIPROGRAM_GUIDE.md` - 添加云开发示例
+
+### 测试验证
+- ✅ 文件类型检测测试通过（.wxml, .wxss, .js）
+- ✅ 导入检测测试通过（wx API）
+- ✅ 场景检测测试通过（小程序开发场景、**云开发场景**）
+- ✅ 内容关键词检测测试通过（Page、Component、setData、**wx.cloud** 等）
+- ✅ 规范内容读取测试通过
+
+---
+
 ## v2.1.0 (2025-12-16)
 
 ### 🎉 新增 Flutter/Dart 支持

@@ -75,6 +75,7 @@ standards/
 | vue3-composition.md | Vue 3 | import vue |
 | pinia.md | Pinia | import pinia |
 | flutter.md | Flutter | import flutter, .dart 文件 |
+| wechat-miniprogram.md | 微信小程序 | import wx, .js/.wxml/.wxss 文件 |
 
 ### Libraries (库规范)
 根据使用的库按需加载

@@ -289,6 +289,13 @@ export class StandardsManager {
       this.addScore(scores, 'standards://patterns/component-design', weights.FILE_TYPE * 0.6);
     }
     
+    // 微信小程序文件类型
+    if (type === 'wxml' || type.endsWith('.wxml') ||
+        type === 'wxss' || type.endsWith('.wxss') ||
+        type === 'wxs' || type.endsWith('.wxs')) {
+      this.addScore(scores, 'standards://frameworks/wechat-miniprogram', weights.FILE_TYPE);
+    }
+    
     if (type === 'ts' || type === 'typescript' || type.endsWith('.ts')) {
       // TypeScript 文件，略微提升 TS 规范权重
       this.addScore(scores, 'standards://core/typescript-base', weights.FILE_TYPE * 0.3);
@@ -328,6 +335,12 @@ export class StandardsManager {
       // i18n
       if (normalized === 'vue-i18n' || normalized.includes('i18n')) {
         this.addScore(scores, 'standards://libraries/i18n', weights.IMPORT_DIRECT);
+      }
+      
+      // 微信小程序
+      if (normalized === 'wx' || normalized.includes('weixin') || 
+          normalized.includes('miniprogram')) {
+        this.addScore(scores, 'standards://frameworks/wechat-miniprogram', weights.IMPORT_DIRECT);
       }
       
       // Axios / API 相关
@@ -383,6 +396,16 @@ export class StandardsManager {
         normalized.includes('locale')) {
       this.addScore(scores, 'standards://libraries/i18n', weights.SCENARIO);
     }
+    
+    // 微信小程序场景
+    if (normalized.includes('小程序') || normalized.includes('miniprogram') ||
+        normalized.includes('wechat') || normalized.includes('微信') ||
+        normalized.includes('wx.') || normalized.includes('page(') ||
+        normalized.includes('component(') || normalized.includes('云开发') ||
+        normalized.includes('云函数') || normalized.includes('云数据库') ||
+        normalized.includes('云存储')) {
+      this.addScore(scores, 'standards://frameworks/wechat-miniprogram', weights.SCENARIO);
+    }
   }
   
   /**
@@ -418,6 +441,17 @@ export class StandardsManager {
     if (normalized.includes('$t(') || normalized.includes('t(\'') ||
         normalized.includes('usei18n') || normalized.includes('locale')) {
       this.addScore(scores, 'standards://libraries/i18n', weights.CONTENT);
+    }
+    
+    // 微信小程序关键词
+    if (normalized.includes('wx.') || normalized.includes('page({') ||
+        normalized.includes('component({') || normalized.includes('setdata') ||
+        normalized.includes('onload') || normalized.includes('onshow') ||
+        normalized.includes('wx:for') || normalized.includes('wx:if') ||
+        normalized.includes('wx.cloud') || normalized.includes('cloudfunctions') ||
+        normalized.includes('callfunction') || normalized.includes('wx-server-sdk') ||
+        normalized.includes('cloud.init') || normalized.includes('exports.main')) {
+      this.addScore(scores, 'standards://frameworks/wechat-miniprogram', weights.CONTENT);
     }
     
     // API 层关键词
@@ -500,11 +534,14 @@ export class StandardsManager {
     const nameMap: Record<string, Record<string, string>> = {
       core: {
         'code-style': '代码风格规范',
-        'typescript-base': 'TypeScript 基础'
+        'typescript-base': 'TypeScript 基础',
+        'dart-base': 'Dart 基础'
       },
       frameworks: {
         'vue3-composition': 'Vue 3 Composition API',
-        'pinia': 'Pinia 状态管理'
+        'pinia': 'Pinia 状态管理',
+        'flutter': 'Flutter 开发规范',
+        'wechat-miniprogram': '微信小程序开发'
       },
       libraries: {
         'element-plus': 'Element Plus 组件库',
@@ -526,11 +563,14 @@ export class StandardsManager {
     const descMap: Record<string, Record<string, string>> = {
       core: {
         'code-style': '命名规范、代码组织、注释规范',
-        'typescript-base': '基础类型、函数、泛型使用'
+        'typescript-base': '基础类型、函数、泛型使用',
+        'dart-base': '空安全、异步编程、类和对象'
       },
       frameworks: {
         'vue3-composition': 'Props、Emits、生命周期、Composables',
-        'pinia': 'Store 定义、状态管理、持久化'
+        'pinia': 'Store 定义、状态管理、持久化',
+        'flutter': 'Widget 设计、状态管理、性能优化',
+        'wechat-miniprogram': 'Page/Component、网络请求、性能优化'
       },
       libraries: {
         'element-plus': '表单、表格、对话框、消息提示',
