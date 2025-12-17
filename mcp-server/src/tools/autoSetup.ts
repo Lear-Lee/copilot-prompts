@@ -151,14 +151,15 @@ export async function autoSetup(args: {
             try {
                 const existingSettings = JSON.parse(fs.readFileSync(settingsJsonPath, 'utf-8'));
                 const updated = { ...existingSettings, ...mcpSettings };
-                fs.writeFileSync(settingsJsonPath, JSON.stringify(updated, null, 2));
+                // 确保 JSON 格式正确，添加结尾换行
+                fs.writeFileSync(settingsJsonPath, JSON.stringify(updated, null, 2) + '\n');
                 results.steps.push({ step: '更新 settings.json', status: 'success' });
             } catch {
-                fs.writeFileSync(settingsJsonPath, JSON.stringify(mcpSettings, null, 2));
+                fs.writeFileSync(settingsJsonPath, JSON.stringify(mcpSettings, null, 2) + '\n');
                 results.steps.push({ step: '重新创建 settings.json', status: 'success' });
             }
         } else {
-            fs.writeFileSync(settingsJsonPath, JSON.stringify(mcpSettings, null, 2));
+            fs.writeFileSync(settingsJsonPath, JSON.stringify(mcpSettings, null, 2) + '\n');
             results.steps.push({ step: '创建 settings.json', status: 'success' });
         }
 
