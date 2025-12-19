@@ -207,6 +207,7 @@ export class StandardsManager {
     // 始终包含核心规范
     standardScores.set('standards://core/code-style', WEIGHTS.CORE);
     standardScores.set('standards://core/typescript-base', WEIGHTS.CORE);
+    standardScores.set('standards://core/code-generation', WEIGHTS.CORE);
     
     // 自动检测导入（如果提供了文件内容）
     let detectedImports = context.imports || [];

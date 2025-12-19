@@ -6,6 +6,8 @@
 2. **类型安全** - 使用严格的类型系统
 3. **一致性** - 遵循统一的代码风格
 4. **可维护性** - 编写易于理解和修改的代码
+5. **注释充分** - 重要逻辑必须添加注释说明
+6. **专注代码** - 生成代码时不创建 Markdown 文档
 
 ## 命名规范
 
@@ -98,6 +100,96 @@ onMounted(() => {})
 
 ## 注释规范
 
+### 核心要求
+
+1. **重要代码必须注释** - 复杂逻辑、算法、业务规则需要清晰说明
+2. **去 AI 化** - 避免使用表情符号、过度热情的语气
+3. **专业简洁** - 使用平实的技术语言，避免口语化表达
+
+### 好的注释风格
+
+```typescript
+// 使用二分查找提高性能
+function binarySearch(arr: number[], target: number): number {
+  let left = 0
+  let right = arr.length - 1
+  
+  // 当搜索范围有效时继续查找
+  while (left <= right) {
+    const mid = Math.floor((left + right) / 2)
+    
+    if (arr[mid] === target) {
+      return mid
+    } else if (arr[mid] < target) {
+      left = mid + 1
+    } else {
+      right = mid - 1
+    }
+  }
+  
+  return -1
+}
+
+// 缓存计算结果避免重复请求
+const memoizedFetch = (() => {
+  const cache = new Map()
+  
+  return async (url: string) => {
+    if (cache.has(url)) {
+      return cache.get(url)
+    }
+    
+    const data = await fetch(url).then(r => r.json())
+    cache.set(url, data)
+    return data
+  }
+})()
+```
+
+### 避免的注释风格
+
+```typescript
+// ❌ 不自然 - 使用表情符号
+// 🎉 太棒了！这个函数超级好用！
+// ✨ 神奇的算法来啦～
+
+// ❌ 过度热情
+// 哇！这里使用了超酷的技巧！
+// 注意啦！这里很重要哦～
+
+// ❌ 只重复代码
+// 创建用户
+function createUser() {}
+
+// ❌ 废话连篇
+// 这个函数非常非常重要，请一定要仔细阅读
+// 它做了很多很多事情，真的很厉害
+```
+
+### 正确的注释示例
+
+```typescript
+// 正确：说明为什么，而非做什么
+// 使用 Set 去重，避免 O(n²) 复杂度
+const uniqueIds = [...new Set(ids)]
+
+// 正确：说明业务规则
+// 管理员用户跳过权限检查
+if (user.role === 'admin') {
+  return true
+}
+
+// 正确：说明技术决策
+// 使用 WeakMap 避免内存泄漏
+const cache = new WeakMap()
+
+// 正确：警告潜在问题
+// 注意：此方法会修改原数组
+function sortInPlace(arr: number[]) {
+  return arr.sort((a, b) => a - b)
+}
+```
+
 ### 函数注释
 ```typescript
 /**
@@ -106,13 +198,48 @@ onMounted(() => {})
  * @returns 用户信息对象，如果不存在返回 null
  */
 function getUserInfo(userId: number): User | null {
-  // ...
+  // 实现逻辑...
+}
+
+// 对于简单函数，单行注释即可
+// 验证邮箱格式
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 ```
 
-### 复杂逻辑注释
+## 文档创建规范
+
+### 禁止行为
+
+**生成代码时不要创建 Markdown 文档**
+
 ```typescript
-// ✅ 好 - 说明为什么这样做
+// ❌ 错误：创建额外的文档文件
+// 不要生成：USAGE.md, GUIDE.md, CHANGES.md 等
+
+// ✅ 正确：在代码中添加充分的注释
+/**
+ * UserService 类
+ * 
+ * 提供用户相关的业务逻辑处理
+ * 包括用户注册、登录、信息更新等功能
+ */
+class UserService {
+  // 实现...
+}
+```
+
+### 何时可以创建文档
+
+仅在以下情况创建文档：
+1. 用户明确要求创建文档
+2. 项目初始化需要 README.md
+3. 修改现有文档文件
+
+### 复杂逻辑注释
+
+```typescript
 // 使用 Set 去重，提高性能（避免 O(n²) 复杂度）
 const uniqueIds = [...new Set(ids)]
 
