@@ -86,8 +86,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '@api'
 
 // 国际化 (必须)
-const { appContext } = getCurrentInstance()!
-const $t = appContext.config.globalProperties.$t
+const instance = getCurrentInstance()
+const $t = instance?.appContext.config.globalProperties.$t
 
 // 类型定义
 interface FormData {
@@ -98,6 +98,75 @@ interface FormData {
 // 响应式状态
 const listLoading = ref(false)
 const list = ref<FormData[]>([])
+```
+
+### 国际化 $t 使用规范
+
+**VitaSage 项目中的 $t 已在 main.ts 中全局注册，不需要额外引入 useI18n。**
+
+#### ✅ 正确使用方式
+
+**在模板中：**
+```vue
+<template>
+  <el-button>{{ $t('保存') }}</el-button>
+  <el-table-column :label="$t('名称')" />
+</template>
+```
+
+**在 script 中：**
+```typescript
+<script setup lang="ts">
+import { getCurrentInstance } from 'vue'
+import { ElMessage } from 'element-plus'
+
+// 获取全局 $t 方法
+const instance = getCurrentInstance()
+const $t = instance?.appContext.config.globalProperties.$t
+
+// 使用 $t
+const handleSave = () => {
+  ElMessage.success($t('保存成功'))
+}
+
+// 在响应式数据中使用
+const rules = reactive({
+  name: [{ required: true, message: $t('请输入名称'), trigger: 'blur' }]
+})
+</script>
+```
+
+#### ❌ 错误使用方式
+
+```typescript
+// ❌ 不要引入 useI18n（项目未使用 vue-i18n 插件）
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
+
+// ❌ 不要在模板中使用 t()
+<el-button>{{ t('保存') }}</el-button>
+```
+
+#### 原理说明
+
+VitaSage 项目在 `src/main.ts` 中自定义实现了国际化：
+
+```typescript
+// main.ts (第 53 行)
+app.config.globalProperties.$t = (key: string) => {
+  try {
+    const localeStore = useLocaleStore()
+    return messages[key][localeStore.locale === 'zh-cn' ? 1 : 0] || key
+  } catch(err) { 
+    console.log(`未添加国际化: ${key}`) 
+  }
+}
+```
+
+**关键特点：**
+1. 使用自定义的 messages 对象（而非 vue-i18n）
+2. $t 方法全局可用，无需导入
+3. 在 script 中使用需通过 getCurrentInstance 获取
 ```
 
 ### 路径别名
