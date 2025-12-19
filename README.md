@@ -1,7 +1,7 @@
 # Copilot Prompts 中央仓库
 
 [![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/ForLear/copilot-prompts)
-[![MCP](https://img.shields.io/badge/MCP-1.1.0-green.svg)](mcp-server/)
+[![MCP](https://img.shields.io/badge/MCP-1.5.0-green.svg)](mcp-server/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 集中管理各类项目的 AI 开发指令文件，通过 MCP 服务器智能分析项目并自动匹配最合适的 GitHub Copilot Agents。
@@ -12,6 +12,7 @@
 - **📦 Agent 库** - 预置多种开发规范（Vue 3、TypeScript、i18n 等）
 - **⚡ 一键配置** - 自动生成 `.github/copilot-instructions.md`
 - **🔄 跨平台** - 支持 Claude Desktop、VS Code 等 MCP 客户端
+- **🛡️ 质量保障** - v1.1.0 新增：自动代码验证和错误修复
 
 ## 📁 项目结构
 

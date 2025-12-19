@@ -18,14 +18,15 @@ import { getSmartStandards } from './tools/getSmartStandards.js';
 import { usePreset, listPresets } from './tools/usePreset.js';
 import { healthCheck } from './tools/healthCheck.js';
 import { StandardsManager } from './core/standardsManager.js';
+import { CodeValidator } from './core/codeValidator.js';
 
-const SERVER_VERSION = '1.4.0';
+const SERVER_VERSION = '1.5.0'; // v1.1.0 更新
 
 /**
  * Copilot Prompts MCP Server
  * 智能项目分析和编码规范服务
  * 
- * @version 1.4.0
+ * @version 1.5.0
  * @features
  * - 项目技术栈自动检测
  * - 智能 Agent 匹配推荐
@@ -37,13 +38,20 @@ const SERVER_VERSION = '1.4.0';
  *   * 零参数智能推荐
  *   * 预设场景快捷方式
  *   * 健康检查诊断
+ * - v1.1.0: 代码质量保障
+ *   * 自动语法验证
+ *   * 代码完整性检查
+ *   * 自动修复常见错误
+ *   * 多场景兼容性测试
  */
 class CopilotPromptsMCPServer {
   private server: Server;
   private standardsManager: StandardsManager;
+  private codeValidator: CodeValidator;
 
   constructor() {
     this.standardsManager = new StandardsManager();
+    this.codeValidator = new CodeValidator();
     
     this.server = new Server(
       {

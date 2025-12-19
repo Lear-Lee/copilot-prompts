@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import { GitHubClient } from '../core/githubClient.js';
 import { SmartAgentMatcher } from '../core/smartAgentMatcher.js';
 import { ConsoleLogger, AgentMetadata } from '../core/types.js';
+import { CodeValidator } from '../core/codeValidator.js';
 
 // ES模块中获取__dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -269,6 +270,62 @@ export async function generateConfig(args: {
             content += `\n\n## 📝 自定义规范\n\n`;
             content += existingCustomContent;
             logger.log('✅ 已保留自定义内容');
+        }
+
+        // 写入文件前进行验证 (v1.1.0)
+        const validator = new CodeValidator(logger);
+        const validation = validator.validateConfigContent(content);
+        
+        if (!validation.isValid) {
+            logger.error('⚠️ 配置内容验证失败，尝试自动修复...');
+            
+            // 尝试自动修复
+            const fixResult = validator.attemptAutoFix(content);
+            if (fixResult.fixed) {
+                content = fixResult.content;
+                logger.log(`✅ 已自动修复 ${fixResult.changes.length} 个问题:`);
+                fixResult.changes.forEach(change => logger.log(`   - ${change}`));
+                
+                // 重新验证
+                const revalidation = validator.validateConfigContent(content);
+                if (!revalidation.isValid) {
+                    const report = validator.generateValidationReport(revalidation);
+                    logger.error('❌ 自动修复后仍存在问题:');
+                    logger.error(report);
+                    
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: JSON.stringify({
+                                error: '配置文件验证失败',
+                                validationReport: report,
+                                message: '生成的配置文件存在语法错误，请检查并手动修复'
+                            }, null, 2)
+                        }]
+                    };
+                }
+            } else {
+                const report = validator.generateValidationReport(validation);
+                logger.error(report);
+                
+                return {
+                    content: [{
+                        type: 'text',
+                        text: JSON.stringify({
+                            error: '配置文件验证失败',
+                            validationReport: report,
+                            message: '生成的配置文件存在语法错误且无法自动修复'
+                        }, null, 2)
+                    }]
+                };
+            }
+        } else if (validation.warnings.length > 0) {
+            logger.log('⚠️ 配置内容验证通过，但有以下警告:');
+            validation.warnings.forEach(warning => {
+                logger.log(`   - [${warning.type}] ${warning.message}`);
+            });
+        } else {
+            logger.log('✅ 配置内容验证通过');
         }
 
         // 写入文件

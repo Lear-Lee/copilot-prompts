@@ -1,7 +1,7 @@
 {
   "name": "copilot-prompts-mcp-server",
-  "version": "1.4.0",
-  "description": "智能项目分析与编码规范管理 MCP 服务器（傻瓜模式：一键配置 + 零参数智能推荐 + 预设场景）",
+  "version": "1.5.0",
+  "description": "智能项目分析与编码规范管理 MCP 服务器（v1.1.0: 代码质量保障 + 傻瓜模式：一键配置 + 零参数智能推荐 + 预设场景）",
   "type": "module",
   "main": "build/index.js",
   "bin": {
