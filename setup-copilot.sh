@@ -93,7 +93,7 @@ detect_tech_stack() {
     local project_path=$1
     local tech_stack=()
     
-    print_info "正在分析项目技术栈..."
+    # 不输出带颜色的消息，直接检测
     
     # 检测前端框架
     if [ -f "$project_path/package.json" ]; then
@@ -216,7 +216,7 @@ EOF
     print_success "已配置 VS Code MCP"
 }
 
-# 生成 .github/copilot-instructions.md
+# 生成 .github/copilot-instructions.md（最小化配置）
 generate_copilot_instructions() {
     local project_path=$1
     local config_id=$2
@@ -229,90 +229,147 @@ generate_copilot_instructions() {
     
     print_info "生成 copilot-instructions.md..."
     
-    cat > "$instructions_file" << EOF
+    cat > "$instructions_file" << 'EOF'
+<!-- 此文件由 Copilot Prompts setup-copilot.sh 生成 -->
+<!-- 你可以添加自定义内容，使用 CUSTOM_START/CUSTOM_END 标记保护 -->
+<!-- 示例: -->
+<!-- CUSTOM_START -->
+<!-- 你的自定义规范 -->
+<!-- CUSTOM_END -->
+
 # 项目开发规范 - Copilot 指令
 
-> 自动生成时间: $(date +%Y-%m-%d)  
-> 配置方案: $config_id
+EOF
 
-## 🎯 核心原则
-
-1. **类型安全** - 充分利用类型系统
-2. **代码一致性** - 遵循项目现有风格
-3. **最小改动** - 只修改必要的代码
-4. **错误处理** - 完善的异常处理机制
-
----
-
-## 🛠️ 技术栈
-
-检测到的技术栈: $tech_stack
+    # 添加元信息
+    cat >> "$instructions_file" << EOF
+> 📌 **自动配置信息**
+> - 生成时间: $(date +%Y-%m-%d)
+> - 配置方案: $config_id
+> - 技术栈: $tech_stack
 
 ---
 
-## 📋 应用的规范
+EOF
 
-### 自动加载规范
+    # 如果有 Element Plus，添加配置方案信息
+    if [[ "$tech_stack" == *"element-plus"* ]] && [ "$config_id" != "standard" ] && [ "$config_id" != "generic" ]; then
+        cat >> "$instructions_file" << EOF
+## 📦 配置方案
 
-通过 MCP 工具自动加载相关规范：
+**方案ID**: $config_id
+
+> 详细规则请参考: \`configs/element-plus-$config_id.json\`
+
+---
+
+EOF
+    fi
+
+    # 添加强制工作流（核心部分）
+    cat >> "$instructions_file" << 'EOF'
+## ⚠️ 强制工作流
+
+**在进行任何代码生成或修改之前，必须先调用 MCP 工具加载相关规范！**
+
+根据文件类型和场景，调用相应的 MCP 工具：
+
+1. **Vue 文件** → `get_relevant_standards({ fileType: "vue" })`
+2. **TypeScript 文件** → `get_relevant_standards({ fileType: "ts" })`
+3. **React 组件** → `get_relevant_standards({ fileType: "tsx" })`
+4. **使用特定库时**：
+   - Element Plus: `get_relevant_standards({ imports: ["element-plus"] })`
+   - Pinia: `get_relevant_standards({ imports: ["pinia"] })`
+   - Vue Router: `get_relevant_standards({ imports: ["vue-router"] })`
+5. **特定场景**：
+   - API 调用: `get_relevant_standards({ scenario: "API 调用" })`
+   - 国际化: `get_relevant_standards({ scenario: "国际化" })`
+
+### 标准流程
+
+1. ✅ **强制**: 加载规范 → 2. 理解需求 → 3. 编写代码 → 4. 验证规范
+
+---
+
+## 📚 技术栈规范
+
+本项目使用以下技术（规范内容由 Copilot 通过 MCP 工具实时加载）：
 
 EOF
 
     # 根据技术栈添加规范引用
-    if [[ "$tech_stack" == *"vue"* ]]; then
-        cat >> "$instructions_file" << EOF
-- **Vue 3 规范**: \`get_relevant_standards({ fileType: "vue" })\`
+    if [[ "$tech_stack" == *"vue3"* ]] || [[ "$tech_stack" == *"vue"* ]]; then
+        cat >> "$instructions_file" << 'EOF'
+### Vue 3 开发
+
+- **文件类型**: `.vue`
+- **规范加载**: `get_relevant_standards({ fileType: "vue" })`
+- **核心要求**: Composition API、TypeScript、响应式最佳实践
+
 EOF
     fi
     
     if [[ "$tech_stack" == *"typescript"* ]]; then
-        cat >> "$instructions_file" << EOF
-- **TypeScript 规范**: \`get_relevant_standards({ fileType: "ts" })\`
+        cat >> "$instructions_file" << 'EOF'
+### TypeScript
+
+- **文件类型**: `.ts`, `.tsx`
+- **规范加载**: `get_relevant_standards({ fileType: "ts" })`
+- **核心要求**: 严格类型、避免 any、完整的类型定义
+
 EOF
     fi
     
     if [[ "$tech_stack" == *"element-plus"* ]]; then
         cat >> "$instructions_file" << EOF
-- **Element Plus 规范**: \`get_relevant_standards({ imports: ["element-plus"], config: "$config_id" })\`
+### Element Plus
 
-**Element Plus 配置方案**: \`$config_id\`
+- **规范加载**: \`get_relevant_standards({ imports: ["element-plus"], config: "$config_id" })\`
+- **配置方案**: $config_id
 EOF
-    fi
-    
-    if [[ "$tech_stack" == *"i18n"* ]]; then
-        cat >> "$instructions_file" << EOF
-- **国际化规范**: \`get_relevant_standards({ scenario: "国际化" })\`
+        
+        if [ "$config_id" = "vitasage" ]; then
+            cat >> "$instructions_file" << 'EOF'
+- **关键要求**: 
+  - 表格必须添加 border
+  - 表格必须高亮当前行
+  - 所有文本必须国际化
+EOF
+        fi
+        cat >> "$instructions_file" << 'EOF'
 
-**国际化要求**: 所有 UI 文本必须使用 \`\$t()\` 函数
 EOF
     fi
     
     if [[ "$tech_stack" == *"pinia"* ]]; then
-        cat >> "$instructions_file" << EOF
-- **状态管理规范**: \`get_relevant_standards({ imports: ["pinia"] })\`
+        cat >> "$instructions_file" << 'EOF'
+### 状态管理 (Pinia)
+
+- **规范加载**: `get_relevant_standards({ imports: ["pinia"] })`
+- **核心要求**: Setup Store 优先、TypeScript 类型定义
+
 EOF
     fi
     
-    # 添加 API 层规范
-    cat >> "$instructions_file" << EOF
+    if [[ "$tech_stack" == *"i18n"* ]] || [[ "$tech_stack" == *"vue-i18n"* ]]; then
+        cat >> "$instructions_file" << 'EOF'
+### 国际化
 
-### API 层规范
+- **规范加载**: `get_relevant_standards({ scenario: "国际化" })`
+- **强制要求**: 所有 UI 文本必须使用 `$t()` 函数，禁止硬编码中文
 
-- **API 调用**: \`get_relevant_standards({ scenario: "API 调用" })\`
+EOF
+    fi
 
+    # 添加自定义规范章节
+    cat >> "$instructions_file" << 'EOF'
 ---
 
-## 📝 工作流
+## 📝 自定义规范
 
-1. **代码生成前**: 自动检查是否符合项目规范
-2. **代码生成中**: 优先使用项目现有模式
-3. **代码生成后**: 自我检查类型安全和代码风格
-
----
-
-**维护团队**: MTA团队（蘑菇与吐司的AI团队）  
-**配置版本**: 1.0.0  
-**更新日期**: $(date +%Y-%m-%d)
+<!-- CUSTOM_START -->
+<!-- 你的自定义规范 -->
+<!-- CUSTOM_END -->
 EOF
     
     print_success "已生成 $instructions_file"
@@ -363,6 +420,8 @@ main() {
     fi
     
     print_header "Copilot Prompts 自动配置"
+    
+    print_info "正在分析项目技术栈..."
     
     # 检测技术栈
     tech_stack=$(detect_tech_stack "$project_path")
