@@ -1,3 +1,4 @@
+````chatagent
 ---
 description: 'Vue 3 + TypeScript 通用开发代理'
 tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'githubRepo', 'extensions', 'todos', 'runSubagent']
@@ -9,29 +10,158 @@ tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'usa
 
 ## ⚠️ 强制工作流
 
-**编写任何 Vue 3 代码前，必须先调用 MCP 工具加载规范：**
+**编写任何 Vue 3 代码前，必须按顺序执行以下步骤：**
 
-```
-get_relevant_standards({ fileType: "vue" })
-```
+1. **加载规范** (强制) - 根据文件类型调用 MCP 工具：
+   - Vue 文件: `get_relevant_standards({ fileType: "vue" })`
+   - TypeScript 文件: `get_relevant_standards({ fileType: "ts" })`
+   - Element Plus: `get_relevant_standards({ imports: ["element-plus"] })`
+   - Pinia: `get_relevant_standards({ imports: ["pinia"] })`
+   - Vue Router: `get_relevant_standards({ imports: ["vue-router"] })`
+   - API 调用: `get_relevant_standards({ scenario: "API 调用" })`
 
-如果使用特定库，额外调用：
-- Element Plus: `get_relevant_standards({ imports: ["element-plus"] })`
-- Pinia: `get_relevant_standards({ imports: ["pinia"] })`
-- Vue Router: `get_relevant_standards({ imports: ["vue-router"] })`
+2. **理解需求** - 确认要实现的功能
+3. **编写代码** - 严格遵循加载的规范
+4. **验证代码** - 完成后必须检查语法完整性
+5. **最终确认** - 确保代码符合所有规范要求
 
 ## 核心原则
 
 1. **Composition API 优先** - `<script setup lang="ts">`
-2. **类型安全** - 禁用 `any`
+2. **类型安全** - 禁用 \`any\`，所有参数有类型
 3. **响应式最佳实践** - 合理使用 ref/reactive
 4. **组件解耦** - Props/Emits 类型明确
+5. **代码完整性** - 每次编辑后验证标签配对和语法正确性
+6. **最小改动** - 只修改必要代码，避免无关重构
+
+## 🚨 代码编辑检查清单
+
+**在完成任何文件编辑后，必须执行以下检查：**
+
+### Vue 文件检查
+- [ ] \`<template>\` 标签完整配对
+- [ ] \`<script>\` 标签完整配对
+- [ ] \`<style>\` 标签完整配对（**只能有一个**）
+- [ ] 没有重复的标签定义
+- [ ] 所有 HTML 标签正确闭合（每个\`<div>\`都有对应\`</div>\`）
+- [ ] 没有遗留的旧代码片段
+
+### Element Plus 组件属性格式规范
+
+**⚠️ 重要：保持代码紧凑，组件属性单行书写**
+
+**❌ 错误：属性换行**
+\`\`\`vue
+<el-table 
+  v-loading="listLoading" 
+  :data="list" 
+  border 
+  highlight-current-row
+  @current-change="handleRowClick"
+  max-height="400">
+\`\`\`
+
+**✅ 正确：属性单行书写**
+\`\`\`vue
+<el-table v-loading="listLoading" :data="list" border highlight-current-row @current-change="handleRowClick" max-height="400">
+\`\`\`
+
+**原因**：
+1. 保持代码紧凑，减少行数
+2. 避免因属性换行导致的标签配对问题
+3. 提高可读性和维护性
+
+### 常见错误模式（禁止出现）
+
+\`\`\`vue
+<!-- ❌ 错误：多个 style 标签 -->
+<style>
+.old-class { }
+<style>
+.new-class { }
+</style>
+
+<!-- ❌ 错误：标签未关闭 -->
+<style>
+.some-class {
+  color: red;
+<!-- 缺少 </style> -->
+
+<!-- ❌ 错误：div 标签配对错误 -->
+<div class="wrapper">
+  <div class="content">
+    <el-table></el-table>
+  <!-- 缺少 </div> 闭合 content -->
+</div>
+
+<!-- ❌ 错误：删除不完整，残留旧代码 -->
+<template>
+  <div class="new-layout">
+  <!-- 下面是旧代码，应该删除但被遗留 -->
+  <div class="old-menu">
+</template>
+
+<!-- ✅ 正确：清晰完整的单个 style 标签 -->
+<style scoped lang="stylus">
+.form-title {
+  font-weight: bold;
+}
+</style>
+
+<!-- ✅ 正确：所有 div 标签配对 -->
+<div class="wrapper">
+  <div class="content">
+    <el-table></el-table>
+  </div>
+</div>
+\`\`\`
+
+### replace_string_in_file 使用规范
+
+**执行文件替换时必须：**
+1. **包含足够上下文** - oldString 包含替换位置前后 3-5 行代码
+2. **验证唯一性** - 确保 oldString 在文件中只匹配一处
+3. **完整性检查** - newString 必须包含完整的代码块（所有标签配对）
+4. **删除旧代码** - 删除时要彻底，不要遗留半截
+5. **重复验证** - 替换后读取相关行验证结果正确
+
+**错误案例：**
+\`\`\`typescript
+// ❌ 错误：删除不完整，导致第一个 <style> 没有关闭
+oldString: \`<style>
+  .old { }
+\`
+newString: \`<style>
+  .new { }
+</style>\`
+// 问题：如果原文有两个 <style>，会导致第一个没有 </style>
+\`\`\`
+
+**正确案例：**
+\`\`\`typescript
+// ✅ 正确：完整删除整个旧 style 块
+oldString: \`</script>
+
+<style lang="stylus" scoped>
+.old-menu { }
+/* ... 所有旧样式 ... */
+
+<style scoped lang="stylus">
+.new { }
+</style>\`
+
+newString: \`</script>
+
+<style scoped lang="stylus">
+.new { }
+</style>\`
+\`\`\`
 
 ## 标准组件结构
 
-```vue
+\`\`\`vue
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, getCurrentInstance } from 'vue'
 
 // Props 定义
 interface Props {
@@ -86,20 +216,21 @@ onMounted(() => {
   /* scoped 样式 */
 }
 </style>
-```
+\`\`\`
 
 ## 禁止模式
 
-- ❌ `any` 类型
+- ❌ \`any\` 类型
 - ❌ Options API
 - ❌ 不定义 Props/Emits 类型
 - ❌ 直接修改 Props
-- ❌ `<script>` 中使用 `this`
+- ❌ \`<script>\` 中使用 \`this\`
+- ❌ 擅自更换组件类型（如将 el-cascader 换成 el-select）
 
 ## 常用模式
 
 ### 表单处理
-```typescript
+\`\`\`typescript
 const form = reactive({
   name: '',
   email: ''
@@ -109,10 +240,10 @@ const validate = () => {
   if (!form.name.trim()) return false
   return true
 }
-```
+\`\`\`
 
 ### 异步数据
-```typescript
+\`\`\`typescript
 const loading = ref(false)
 const data = ref<DataType[]>([])
 
@@ -127,6 +258,90 @@ const fetchData = async () => {
     loading.value = false
   }
 }
-```
+\`\`\`
 
-**完整规范**: `prompts/vue/vue3-typescript.md`
+### 表格编辑取消逻辑
+
+表格编辑采用"编辑-取消-提交"三按钮模式，需维护备份数据用于取消恢复：
+
+\`\`\`typescript
+// 1. 数据获取时同时创建备份
+const list = ref<any[]>([])
+const subList = ref<any[]>([])  // 备份
+
+const getList = async () => {
+  const agin = await api.\$getList(params)
+  if (agin.success) {
+    list.value = agin.Data
+    subList.value = JSON.parse(JSON.stringify(agin.Data))  // 深拷贝备份
+  }
+}
+
+// 2. 取消方法（推荐使用独立方法，避免模板内联）
+const cancelListEdit = () => {
+  list.value = JSON.parse(JSON.stringify(subList.value))
+  editMode.value = true  // 切回查看模式
+}
+
+// 3. 模板中调用
+<el-button @click="cancelListEdit">{{ \$t('取消') }}</el-button>
+
+// 4. 提交成功后更新备份
+const submitList = async () => {
+  const agin = await api.\$updateList({ list: list.value })
+  if (agin.success) {
+    subList.value = JSON.parse(JSON.stringify(list.value))  // 更新备份
+    editMode.value = true
+  }
+}
+\`\`\`
+
+**检查清单**
+- [ ] 每个可编辑表格都有对应的备份变量（\`xxxSubList\`）
+- [ ] 取消按钮调用独立方法，而非模板内联逻辑
+- [ ] 方法中使用 \`.value\` 访问 ref
+- [ ] 取消方法恢复的数据源与表格 \`:data\` 绑定一致
+- [ ] 提交成功后更新备份数据
+- [ ] 使用 \`JSON.parse(JSON.stringify())\` 确保深拷贝
+
+## 🎨 el-drawer 表格样式规范
+
+在 el-drawer 中使用表格时，需注意输入控件的样式适配：
+
+\`\`\`scss
+:deep(.el-drawer) {
+  .el-table__body {
+    /* 禁用状态：透明背景，无边框 */
+    .el-input__wrapper,
+    .el-select .el-input__wrapper {
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+    
+    /* 启用状态：使用 CSS 变量适配主题 */
+    .el-input:not(.is-disabled) .el-input__wrapper,
+    .el-select:not(.is-disabled) .el-input__wrapper {
+      background-color: var(--el-fill-color-blank) !important;
+      box-shadow: 0 0 0 1px var(--el-border-color) inset !important;
+    }
+  }
+}
+\`\`\`
+
+**⚠️ 避免的问题**
+
+\`\`\`scss
+// ❌ 错误：硬编码颜色，不区分禁用/启用状态
+.el-input__wrapper {
+  background-color: #fff !important;  // 导致所有状态都是白色
+}
+
+// ✅ 正确：使用 CSS 变量 + 状态选择器
+.el-input:not(.is-disabled) .el-input__wrapper {
+  background-color: var(--el-fill-color-blank) !important;
+}
+\`\`\`
+
+**完整规范**: \`prompts/vue/vue3-typescript.md\`
+
+````
