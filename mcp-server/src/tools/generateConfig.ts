@@ -56,43 +56,51 @@ export async function generateConfig(args: {
             
             logger.log('正在匹配 Agents...');
             
-            // 获取可用 Agents - 优先从本地文件系统
-            // 注意：编译后在 build/tools/, agents 目录在项目根的上一级
-            const agentsDir = path.join(__dirname, '../../../agents');
-            logger.log(`查找 Agents 目录: ${agentsDir}`);
+            // 获取可用 Agents - 优先从 GitHub 获取（保证最新版本）
             const availableAgents: AgentMetadata[] = [];
             
-            if (fs.existsSync(agentsDir)) {
-                logger.log('✅ 从本地加载 Agents');
-                // 从本地加载
-                const agentFiles = fs.readdirSync(agentsDir);
-                logger.log(`找到 ${agentFiles.length} 个文件`);
-                for (const file of agentFiles) {
-                    if (file.endsWith('.agent.md')) {
-                        try {
-                            const filePath = path.join(agentsDir, file);
-                            const content = fs.readFileSync(filePath, 'utf-8');
-                            const metadata = matcher.parseAgentMetadata(`agents/${file}`, content);
-                            availableAgents.push(metadata);
-                            logger.log(`✅ 加载 Agent: ${metadata.title}`);
-                        } catch (error) {
-                            logger.error(`解析 ${file} 失败`);
-                        }
-                    }
-                }
-            } else {
-                // 从GitHub加载（备用）
+            try {
+                logger.log('📡 从 GitHub 获取 Agents...');
                 const agentFiles = await githubClient.listDirectoryFiles('agents');
+                
                 for (const file of agentFiles) {
                     if (file.name.endsWith('.agent.md')) {
                         try {
                             const content = await githubClient.fetchFileContent(file.path);
                             const metadata = matcher.parseAgentMetadata(file.path, content);
                             availableAgents.push(metadata);
+                            logger.log(`✅ 加载 Agent: ${metadata.title}`);
                         } catch (error) {
                             logger.error(`解析 ${file.name} 失败`);
                         }
                     }
+                }
+                logger.log(`✅ 从 GitHub 成功加载 ${availableAgents.length} 个 Agents`);
+            } catch (githubError) {
+                // GitHub 失败时尝试本地
+                logger.log('⚠️ GitHub 获取失败，尝试从本地加载...');
+                const agentsDir = path.join(__dirname, '../../../agents');
+                
+                if (fs.existsSync(agentsDir)) {
+                    const agentFiles = fs.readdirSync(agentsDir);
+                    logger.log(`找到 ${agentFiles.length} 个本地文件`);
+                    
+                    for (const file of agentFiles) {
+                        if (file.endsWith('.agent.md')) {
+                            try {
+                                const filePath = path.join(agentsDir, file);
+                                const content = fs.readFileSync(filePath, 'utf-8');
+                                const metadata = matcher.parseAgentMetadata(`agents/${file}`, content);
+                                availableAgents.push(metadata);
+                                logger.log(`✅ 加载 Agent: ${metadata.title}`);
+                            } catch (error) {
+                                logger.error(`解析 ${file} 失败`);
+                            }
+                        }
+                    }
+                    logger.log(`✅ 从本地成功加载 ${availableAgents.length} 个 Agents`);
+                } else {
+                    throw new Error('无法从 GitHub 或本地获取 Agents');
                 }
             }
             
@@ -107,20 +115,29 @@ export async function generateConfig(args: {
             logger.log(`使用指定的 Agents: ${args.agentIds.join(', ')}`);
             
             selectedAgents = [];
-            const agentsDir = path.join(__dirname, '../../../agents');
             
             for (const id of args.agentIds) {
                 try {
-                    const localPath = path.join(agentsDir, `${id}.agent.md`);
                     let content: string;
+                    const agentPath = `agents/${id}.agent.md`;
                     
-                    if (fs.existsSync(localPath)) {
-                        // 从本地加载
-                        content = fs.readFileSync(localPath, 'utf-8');
-                    } else {
-                        // 从GitHub加载（备用）
-                        const agentPath = `agents/${id}.agent.md`;
+                    // 优先从 GitHub 加载（保证最新版本）
+                    try {
+                        logger.log(`从 GitHub 获取 Agent: ${id}`);
                         content = await githubClient.fetchFileContent(agentPath);
+                        logger.log(`✅ 从 GitHub 加载成功: ${id}`);
+                    } catch (githubError) {
+                        // GitHub 失败时尝试本地
+                        logger.log(`GitHub 获取失败，尝试本地: ${id}`);
+                        const agentsDir = path.join(__dirname, '../../../agents');
+                        const localPath = path.join(agentsDir, `${id}.agent.md`);
+                        
+                        if (fs.existsSync(localPath)) {
+                            content = fs.readFileSync(localPath, 'utf-8');
+                            logger.log(`✅ 从本地加载成功: ${id}`);
+                        } else {
+                            throw new Error(`Agent ${id} 不存在（GitHub 和本地都未找到）`);
+                        }
                     }
                     
                     const metadata = matcher.parseAgentMetadata(`agents/${id}.agent.md`, content);

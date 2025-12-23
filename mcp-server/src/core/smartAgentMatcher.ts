@@ -34,6 +34,16 @@ export class SmartAgentMatcher {
 
         const rootPath = workspaceFolder.uri.fsPath;
 
+        // 优先检测 Flutter 项目
+        const pubspecPath = path.join(rootPath, 'pubspec.yaml');
+        if (fs.existsSync(pubspecPath)) {
+            const pubspecFeatures = this.analyzePubspecYaml(pubspecPath);
+            this.mergeFeatures(features, pubspecFeatures);
+            features.projectType = 'flutter';
+            this.log(`✅ 项目分析完成: ${features.projectType}`);
+            return features;
+        }
+
         // 分析 package.json
         const packageJsonPath = path.join(rootPath, 'package.json');
         if (fs.existsSync(packageJsonPath)) {
@@ -99,6 +109,37 @@ export class SmartAgentMatcher {
 
         } catch (error) {
             this.log(`解析 package.json 失败: ${error}`);
+        }
+
+        return features;
+    }
+
+    /**
+     * 分析 pubspec.yaml (Flutter 项目)
+     */
+    private analyzePubspecYaml(pubspecPath: string): Partial<ProjectFeatures> {
+        const features: Partial<ProjectFeatures> = {
+            frameworks: ['Flutter'],
+            languages: ['Dart'],
+            tools: [],
+            keywords: []
+        };
+
+        try {
+            const content = fs.readFileSync(pubspecPath, 'utf-8');
+            
+            // 检测常见的 Flutter 包
+            if (content.includes('provider:')) features.keywords!.push('state-management');
+            if (content.includes('riverpod:')) features.keywords!.push('state-management');
+            if (content.includes('bloc:')) features.keywords!.push('state-management');
+            if (content.includes('get:')) features.keywords!.push('routing', 'state-management');
+            if (content.includes('flutter_localizations:') || content.includes('intl:')) {
+                features.keywords!.push('i18n');
+            }
+            if (content.includes('go_router:')) features.keywords!.push('routing');
+            
+        } catch (error) {
+            this.log(`解析 pubspec.yaml 失败: ${error}`);
         }
 
         return features;

@@ -86,14 +86,23 @@ Claude: [调用 generate_config 工具]
 
 ### 🎯 Phase 4: 傻瓜模式工具（推荐）
 
-#### 1. `auto_setup` - 一键自动配置
+#### 1. `auto_setup` - 一键自动配置 ⭐
 
-30 秒完成 VS Code MCP 配置，无需手动编辑任何文件。
+**v1.2.0 更新**：现在不仅配置 MCP 服务器，还会自动分析项目并生成 `copilot-instructions.md`！
+**v1.2.1 更新**：默认从 GitHub 获取最新 Agents，本地作为备份。
+
+30 秒完成完整配置，无需手动编辑任何文件：
+- ✅ 创建 `.vscode/mcp.json` 
+- ✅ 更新 `settings.json`
+- ✅ 添加推荐扩展
+- ✅ **自动分析项目并生成 `.github/copilot-instructions.md`**
+- ✅ **从 GitHub 获取最新 Agents**（确保使用最新规范）
 
 **参数**:
 ```typescript
 {
-  workspacePath?: string  // 可选，不填则使用当前目录
+  workspacePath?: string         // 可选，不填则使用当前目录
+  generateInstructions?: boolean // 是否生成 copilot-instructions.md（默认 true）
 }
 ```
 
@@ -106,14 +115,27 @@ Claude: [调用 generate_config 工具]
     { "step": "创建 .vscode 目录", "status": "success" },
     { "step": "检测 MCP 服务器路径", "status": "success" },
     { "step": "创建 mcp.json", "status": "success" },
-    { "step": "更新 settings.json", "status": "success" }
+    { "step": "更新 settings.json", "status": "success" },
+    { "step": "生成 copilot-instructions.md", "status": "success", "detail": "应用了 3 个 Agents" }
   ],
   "nextSteps": [
     "1. 重新加载 VS Code 窗口",
     "2. 打开 GitHub Copilot Chat",
-    "3. 尝试说：获取 Vue 3 相关规范"
+    "3. 开始使用：Copilot 会自动应用项目规范"
   ]
 }
+```
+
+**使用示例**:
+```
+// 完整配置（推荐）
+auto_setup({ workspacePath: "/Users/you/my-project" })
+
+// 只配置 MCP，不生成项目规范
+auto_setup({ 
+  workspacePath: "/Users/you/my-project",
+  generateInstructions: false 
+})
 ```
 
 #### 2. `health_check` - 健康检查诊断

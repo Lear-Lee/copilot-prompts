@@ -1,13 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ConsoleLogger } from '../core/types.js';
+import { analyzeProject } from './analyzeProject.js';
+import { generateConfig } from './generateConfig.js';
 
 /**
  * 自动配置工具
  * 一键配置 MCP 服务器到 VS Code 工作区
+ * v1.2.0: 新增自动生成项目 copilot-instructions.md
  */
 export async function autoSetup(args: {
     workspacePath?: string;
+    generateInstructions?: boolean; // 是否生成 copilot-instructions.md（默认 true）
 }): Promise<{
     content: Array<{ type: string; text: string }>;
 }> {
@@ -194,6 +198,88 @@ export async function autoSetup(args: {
             results.warnings.push('未检测到 .gitignore，建议手动添加 .vscode/mcp.json');
         }
 
+        // Step 7: 自动分析项目并生成 copilot-instructions.md
+        const generateInstructions = args.generateInstructions !== false; // 默认 true
+        if (generateInstructions) {
+            logger.log('🔍 分析项目并生成 copilot-instructions.md...');
+            
+            try {
+                // 分析项目以推荐 Agents
+                const analysisResult = await analyzeProject({ projectPath: workspacePath });
+                const analysisContent = analysisResult.content[0];
+                
+                if (analysisContent.type === 'text') {
+                    const analysisData = JSON.parse(analysisContent.text);
+                    
+                    if (analysisData.success && analysisData.features) {
+                        // 根据项目特征推荐 Agents
+                        const agentIds: string[] = [];
+                        const features = analysisData.features;
+                        
+                        // Vue 3 项目
+                        if (features.frameworks?.includes('Vue 3') || features.frameworks?.includes('Vue')) {
+                            agentIds.push('vue3');
+                        }
+                        
+                        // LogicFlow
+                        if (features.tools?.includes('LogicFlow')) {
+                            agentIds.push('logicflow');
+                        }
+                        
+                        // 国际化
+                        if (features.keywords?.includes('i18n') || features.keywords?.includes('国际化')) {
+                            agentIds.push('i18n');
+                        }
+                        
+                        // Flutter
+                        if (features.projectType === 'flutter') {
+                            agentIds.push('flutter');
+                        }
+                        
+                        // 微信小程序
+                        if (features.projectType === 'wechat-miniprogram') {
+                            agentIds.push('wechat-miniprogram');
+                        }
+                        
+                        // 生成配置文件
+                        if (agentIds.length > 0) {
+                            const configResult = await generateConfig({
+                                projectPath: workspacePath,
+                                agentIds,
+                                autoMatch: false,
+                                updateMode: 'merge'
+                            });
+                            
+                            const configContent = configResult.content[0];
+                            if (configContent.type === 'text') {
+                                const configData = JSON.parse(configContent.text);
+                                
+                                if (configData.success) {
+                                    results.steps.push({ 
+                                        step: '生成 copilot-instructions.md', 
+                                        status: 'success',
+                                        detail: `应用了 ${configData.agents?.length || 0} 个 Agents: ${agentIds.join(', ')}`
+                                    });
+                                } else {
+                                    results.warnings.push(`配置生成失败: ${configData.error || '未知错误'}`);
+                                }
+                            }
+                        } else {
+                            results.warnings.push('未找到匹配的 Agents，跳过配置生成');
+                            results.warnings.push('你可以稍后手动运行 generate_config 工具并指定 agentIds');
+                        }
+                    } else {
+                        results.warnings.push(`项目分析失败: ${analysisData.error || '未知错误'}`);
+                    }
+                }
+            } catch (error) {
+                results.warnings.push(`自动生成配置失败: ${error instanceof Error ? error.message : String(error)}`);
+                results.warnings.push('你可以稍后手动运行 generate_config 工具生成配置');
+            }
+        } else {
+            results.steps.push({ step: '跳过 copilot-instructions.md 生成', status: 'skip' });
+        }
+
         logger.log('✅ 自动配置完成！');
 
         return {
@@ -206,7 +292,8 @@ export async function autoSetup(args: {
                     nextSteps: [
                         '1. 重新加载 VS Code 窗口 (Cmd+Shift+P → Reload Window)',
                         '2. 打开 GitHub Copilot Chat',
-                        '3. 尝试说：获取 Vue 3 相关规范'
+                        '3. 开始使用：Copilot 会自动应用项目规范',
+                        '4. 高级用法：尝试说"获取 Vue 3 相关规范"'
                     ]
                 }, null, 2)
             }]

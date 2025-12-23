@@ -121,13 +121,18 @@ class CopilotPromptsMCPServer {
         },
         {
           name: 'auto_setup',
-          description: '🎯 一键自动配置 MCP 服务器到 VS Code 工作区。创建 .vscode/mcp.json、settings.json、extensions.json，无需手动配置。',
+          description: '🎯 一键自动配置 MCP 服务器和项目规范。自动创建 .vscode/mcp.json、settings.json、extensions.json，并分析项目生成 .github/copilot-instructions.md 配置文件。',
           inputSchema: {
             type: 'object',
             properties: {
               workspacePath: {
                 type: 'string',
                 description: '工作区路径（可选，不填则使用当前目录）',
+              },
+              generateInstructions: {
+                type: 'boolean',
+                description: '是否自动生成 copilot-instructions.md（默认 true）',
+                default: true,
               },
             },
           },

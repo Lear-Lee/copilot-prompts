@@ -97,23 +97,39 @@ copilot-prompts/
 
 **在 VS Code 中使用：**
 
-1. **配置 VS Code MCP**
+**v1.2.0 更新**：现在支持一键自动配置！
+
+1. **一键自动配置（推荐）**
+   
+   在 VS Code Copilot Chat 中：
+   ```
+   使用 auto_setup 工具自动配置当前项目
+   ```
+   
+   这会自动完成：
+   - ✅ 创建 `.vscode/mcp.json` 和 `settings.json`
+   - ✅ 分析项目并生成 `.github/copilot-instructions.md`
+   - ✅ 匹配合适的 Agents（vue3、i18n、logicflow 等）
+
+2. **手动配置 MCP**（高级用户）
    
    创建 `.vscode/mcp.json`：
    ```json
    {
-     "mcpServers": {
+     "servers": {
        "copilot-prompts": {
          "command": "node",
-         "args": ["/绝对路径/copilot-prompts/mcp-server/build/index.js"]
+         "args": ["/绝对路径/copilot-prompts/mcp-server/build/index.js"],
+         "autoStart": true
        }
      }
    }
    ```
 
-2. **在 Copilot Chat 中使用**
+3. **在 Copilot Chat 中使用**
    ```
-   @vue3 分析当前项目并推荐配置
+   分析项目并生成配置
+   获取 Vue 3 相关规范
    ```
 
 ### 方式 3: 手动配置
