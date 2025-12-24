@@ -308,6 +308,13 @@ export class StandardsManager {
       // TypeScript 文件，略微提升 TS 规范权重
       this.addScore(scores, 'standards://core/typescript-base', weights.FILE_TYPE * 0.3);
     }
+    
+    // Flutter/Dart 文件类型
+    if (type === 'dart' || type.endsWith('.dart')) {
+      this.addScore(scores, 'standards://frameworks/flutter', weights.FILE_TYPE);
+      this.addScore(scores, 'standards://frameworks/flutter-ui-system', weights.FILE_TYPE);
+      this.addScore(scores, 'standards://core/dart-base', weights.FILE_TYPE * 0.5);
+    }
   }
   
   /**
@@ -359,6 +366,19 @@ export class StandardsManager {
       // 通用组件库导入提示组件设计
       if (normalized.includes('component') || normalized.startsWith('./components/')) {
         this.addScore(scores, 'standards://patterns/component-design', weights.IMPORT_RELATED);
+      }
+      
+      // Flutter 相关
+      if (normalized === 'flutter' || normalized.startsWith('flutter/') ||
+          normalized.startsWith('package:flutter')) {
+        this.addScore(scores, 'standards://frameworks/flutter', weights.IMPORT_DIRECT);
+        this.addScore(scores, 'standards://frameworks/flutter-ui-system', weights.IMPORT_DIRECT);
+      }
+      
+      // GetX 状态管理
+      if (normalized === 'get' || normalized.startsWith('get/') ||
+          normalized.startsWith('package:get')) {
+        this.addScore(scores, 'standards://frameworks/flutter', weights.IMPORT_DIRECT);
       }
     });
   }
@@ -414,6 +434,24 @@ export class StandardsManager {
         normalized.includes('云存储')) {
       this.addScore(scores, 'standards://frameworks/wechat-miniprogram', weights.SCENARIO);
     }
+    
+    // Flutter UI 系统场景
+    if (normalized.includes('flutter') || normalized.includes('dart') ||
+        normalized.includes('widget') || normalized.includes('ui系统') ||
+        normalized.includes('ui 系统') || normalized.includes('flutter ui') ||
+        normalized.includes('design token') || normalized.includes('token') ||
+        normalized.includes('主题') || normalized.includes('theme')) {
+      this.addScore(scores, 'standards://frameworks/flutter', weights.SCENARIO);
+      this.addScore(scores, 'standards://frameworks/flutter-ui-system', weights.SCENARIO);
+    }
+    
+    // Flex 组件场景
+    if (normalized.includes('flexbutton') || normalized.includes('flexcard') ||
+        normalized.includes('flexinput') || normalized.includes('flex组件') ||
+        normalized.includes('$c') || normalized.includes('$s') ||
+        normalized.includes('$t') || normalized.includes('$r')) {
+      this.addScore(scores, 'standards://frameworks/flutter-ui-system', weights.SCENARIO * 1.5);
+    }
   }
   
   /**
@@ -466,6 +504,25 @@ export class StandardsManager {
     if (normalized.includes('axios.') || normalized.includes('.get(') ||
         normalized.includes('.post(') || normalized.includes('interceptor')) {
       this.addScore(scores, 'standards://patterns/api-layer', weights.CONTENT);
+    }
+    
+    // Flutter Widget 关键词
+    if (normalized.includes('statelesswidget') || normalized.includes('statefulwidget') ||
+        normalized.includes('buildcontext') || normalized.includes('@override') ||
+        normalized.includes('widget build(') || normalized.includes('getx') ||
+        normalized.includes('get.find') || normalized.includes('obx(')) {
+      this.addScore(scores, 'standards://frameworks/flutter', weights.CONTENT);
+    }
+    
+    // Flutter UI Token 系统关键词
+    if (normalized.includes('$c.') || normalized.includes('$s.') ||
+        normalized.includes('$t.') || normalized.includes('$r.') ||
+        normalized.includes('$shadow.') || normalized.includes('$b.') ||
+        normalized.includes('flexbutton') || normalized.includes('flexcard') ||
+        normalized.includes('flexinput') || normalized.includes('flexbox') ||
+        normalized.includes('tokenmanager') || normalized.includes('designtokens') ||
+        normalized.includes('thememanager') || normalized.includes('gap(')) {
+      this.addScore(scores, 'standards://frameworks/flutter-ui-system', weights.CONTENT * 2);
     }
   }
   
@@ -549,6 +606,7 @@ export class StandardsManager {
         'vue3-composition': 'Vue 3 Composition API',
         'pinia': 'Pinia 状态管理',
         'flutter': 'Flutter 开发规范',
+        'flutter-ui-system': 'Flutter UI 系统规范',
         'wechat-miniprogram': '微信小程序开发'
       },
       libraries: {
@@ -578,6 +636,7 @@ export class StandardsManager {
         'vue3-composition': 'Props、Emits、生命周期、Composables',
         'pinia': 'Store 定义、状态管理、持久化',
         'flutter': 'Widget 设计、状态管理、性能优化',
+        'flutter-ui-system': 'Design Token、Flex组件、主题系统、$快捷方式',
         'wechat-miniprogram': 'Page/Component、网络请求、性能优化'
       },
       libraries: {

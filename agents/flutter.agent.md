@@ -109,6 +109,33 @@ get_relevant_standards({
 })
 ```
 
+#### 🎨 UI 开发时（my_flutter 项目专用）
+
+> ⚠️ **强制要求**: 在 my_flutter 项目中进行任何 UI 开发前，必须加载 UI 系统规范！
+
+```
+# 加载 UI 系统规范
+get_relevant_standards({ 
+  scenario: "Flutter UI 系统",
+  imports: ["flutter"]
+})
+```
+
+**核心要点**:
+1. **使用 Token 系统** - 禁止硬编码颜色、间距等样式值
+2. **使用 Flex 组件** - `FlexButton`, `FlexCard`, `FlexInput`, `FlexBox`, `Gap`
+3. **使用全局快捷方式** - `$c`, `$t`, `$s`, `$r`, `$shadow`, `$b`, `$o`, `$d`
+
+```dart
+// ❌ 禁止
+Container(color: Color(0xFF3B82F6), padding: EdgeInsets.all(16))
+
+// ✅ 正确
+Container(color: $c.primary, padding: EdgeInsets.all($s.md))
+```
+
+**详细规范**: `standards/frameworks/flutter-ui-system.md`
+
 ---
 
 ## 📐 架构模式
