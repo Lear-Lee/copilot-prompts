@@ -16,22 +16,35 @@
 **特征**：开始标签和所有属性必须在同一行
 
 ```vue
-<!-- ✅ 单行书写风格 -->
+<!-- ✅ 单行书写风格 - Element Plus 组件 -->
 <el-table v-loading="loading" :data="list" border highlight-current-row>
 <el-button type="primary" :loading="btnLoading" @click="submit">{{ $t('提交') }}</el-button>
 
-<!-- ❌ 在单行书写项目中禁止 -->
+<!-- ✅ 单行书写风格 - 普通 HTML 标签也适用 -->
+<div class="menu_item" :class="{ active: isActive }" @click="handleClick">
+<div v-for="item in list" :key="item.id" class="item" @click="select(item)">
+
+<!-- ❌ 在单行书写项目中禁止 - 任何标签的多行写法 -->
 <el-table 
   v-loading="loading" 
   :data="list">
+  
+<div 
+  class="menu_item"
+  @click="handleClick">
 ```
+
+**适用范围**：
+- ⚠️ **所有 HTML 标签**（包括 `<div>`, `<span>`, `<section>` 等）
+- ⚠️ **所有 Vue 组件**（包括 Element Plus 组件和自定义组件）
+- ⚠️ **特殊情况例外**：仅当单行过长（>120 字符）时可以换行
 
 **检测方法**：
 - copilot-instructions.md 明确声明使用单行书写风格
 - 或项目中 90% 以上组件使用单行书写
 - 或用户明确要求使用紧凑风格
 
-**强制执行**：检测到单行书写项目时，所有 Element Plus 组件必须遵守单行书写。
+**强制执行**：检测到单行书写项目时，所有标签（包括普通 HTML 和组件）必须遵守单行书写。
 
 #### 风格 B：多行书写（标准风格）
 
@@ -100,7 +113,7 @@ mcp_copilot-promp_analyze_project({
 
 | 配置项 | 标准方案 | 严格方案 | 说明 |
 |-------|---------|--------------|------|
-| **代码格式** | 多行书写 | 单行书写 | 严格方案: 开始标签+属性单行 |
+| **代码格式** | 多行书写 | 单行书写（所有标签） | 严格方案: 开始标签+属性单行，包括普通HTML标签 |
 | **表格边框** | 可选 | `border` 必须 | 100% 使用 |
 | **表格高亮** | 推荐 | `highlight-current-row` 必须 | 100% 使用 |
 | **弹窗销毁** | 推荐 | `destroy-on-close` 必须 | 95% 使用 |
@@ -157,6 +170,7 @@ mcp_copilot-promp_analyze_project({
 ```yaml
 配置ID: strict
 特点:
+  - 代码格式: 所有标签（包括 div/span 等）必须单行书写 (100%)
   - 表格: 必须 border + highlight-current-row (100%)
   - 按钮: 操作列统一 link 样式 (90%)
   - 弹窗: 必须 destroy-on-close (95%)
@@ -166,28 +180,41 @@ mcp_copilot-promp_analyze_project({
   - Loading: 统一命名 listLoading/operaLoading
 ```
 
+**代码格式要求（重要）**：
+```vue
+<!-- ✅ 正确：所有开始标签和属性在同一行 -->
+<div class="menu_item" :class="{ active: isActive }" @click="handleClick">
+<div v-for="item in list" :key="item.id" class="item">
+<el-table v-loading="listLoading" :data="list" border highlight-current-row>
+
+<!-- ❌ 错误：任何标签的多行书写都不允许 -->
+<div 
+  class="menu_item"
+  @click="handleClick">
+  
+<el-table
+  :data="list"
+  border>
+```
+
 **典型代码风格**：
 ```vue
-<!-- ✅ 严格方案标准模板 -->
-<el-table 
-  v-loading="listLoading" 
-  :data="list" 
-  border 
-  highlight-current-row
->
+<!-- ✅ 严格方案标准模板 - 注意单行书写 -->
+<el-table v-loading="listLoading" :data="list" border highlight-current-row>
   <el-table-column type="index" :label="$t('序号')" width="70" />
   <el-table-column prop="name" :label="$t('名称')" min-width="120" />
   <el-table-column fixed="right" :label="$t('操作')" width="200">
     <template #default="scope">
-      <el-button link type="primary" @click="edit(scope.row)">
-        {{ $t('编辑') }}
-      </el-button>
-      <el-button link type="danger" @click="del(scope.row)">
-        {{ $t('删除') }}
-      </el-button>
+      <el-button link type="primary" @click="edit(scope.row)">{{ $t('编辑') }}</el-button>
+      <el-button link type="danger" @click="del(scope.row)">{{ $t('删除') }}</el-button>
     </template>
   </el-table-column>
 </el-table>
+
+<!-- ✅ 菜单项也使用单行 -->
+<div class="menu_item" :class="{ active: item.action }" @click="handleClick(index)">
+  <span class="menu_text">{{ item.name }}</span>
+</div>
 ```
 
 **宽度规范**：
