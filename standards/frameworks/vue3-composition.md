@@ -8,6 +8,68 @@
 4. **模板规范** - 避免复杂逻辑,禁止内联样式
 5. **组件解耦** - 清晰的 Props/Emits 接口
 
+---
+
+## 📐 模板代码格式规范
+
+### 标签书写风格
+
+根据项目不同，有两种标签书写风格：
+
+#### 风格 A：单行书写（紧凑风格）
+
+**特征**：开始标签和所有属性必须在同一行
+
+```vue
+<!-- ✅ 单行书写风格 - 所有标签 -->
+<div class="container" :class="{ active: isActive }" @click="handleClick">
+<el-button type="primary" :loading="loading" @click="submit">{{ $t('提交') }}</el-button>
+<div v-for="item in list" :key="item.id" class="item" @click="select(item)">
+<span v-show="isVisible" class="text">{{ content }}</span>
+
+<!-- ❌ 禁止：多行书写 -->
+<div 
+  class="container"
+  @click="handleClick">
+  
+<el-button
+  type="primary"
+  @click="submit">
+```
+
+**适用范围**：
+- ⚠️ **所有 HTML 标签**（`<div>`, `<span>`, `<section>` 等）
+- ⚠️ **所有 Vue 组件**（Element Plus、自定义组件等）
+- ⚠️ **例外**：仅当单行过长（>120 字符）时可以换行
+
+**检测方法**：
+- .github/copilot-instructions.md 明确声明使用单行书写
+- 或项目中 90% 以上标签使用单行书写
+- 或用户明确要求紧凑风格
+
+#### 风格 B：多行书写（标准风格）
+
+**特征**：每个属性一行，便于阅读
+
+```vue
+<!-- ✅ 多行书写风格 -->
+<div
+  class="container"
+  :class="{ active: isActive }"
+  @click="handleClick">
+  
+<el-button
+  type="primary"
+  :loading="loading"
+  @click="submit">
+  {{ $t('提交') }}
+</el-button>
+```
+
+**适用场景**：未明确要求单行书写的项目（默认）
+
+---
+
 ## 组件基本结构
 
 ```vue
