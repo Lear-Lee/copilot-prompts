@@ -51,9 +51,12 @@ standards/
 │   ├── element-plus.md      # Element Plus
 │   └── i18n.md              # 国际化
 │
-└── patterns/                # 设计模式（智能推荐）
-    ├── api-layer.md         # API 层设计
-    └── component-design.md  # 组件设计模式
+├── patterns/                # 设计模式（智能推荐）
+│   ├── api-layer.md         # API 层设计
+│   └── component-design.md  # 组件设计模式
+│
+└── workflows/               # 工作流规范（场景触发）
+    └── large-project-split.md  # 大型项目文档拆分
 ```
 
 ## 🎯 规范分类
@@ -92,6 +95,13 @@ standards/
 |------|------|--------|
 | api-layer.md | API 调用 | API, axios, request |
 | component-design.md | 组件设计 | component, props, emit |
+
+### Workflows (工作流规范)
+根据项目规模和场景触发
+
+| 文件 | 场景 | 触发条件 |
+|------|------|----------|
+| large-project-split.md | 大型项目文档拆分 | 页面数>30, 模块>5, 原型分析 |
 
 ## 🔧 使用示例
 
@@ -166,6 +176,15 @@ export const standardsMapping = {
     component: {
       keywords: ['component', 'props', 'emit'],
       standards: ['component-design']
+    }
+  },
+  
+  // 工作流检测
+  workflows: {
+    'large-project': {
+      keywords: ['原型', '设计稿', '页面拆分', '模块规划', '开发计划', '大型项目'],
+      conditions: ['页面数>30', '模块>5'],
+      standards: ['large-project-split']
     }
   }
 }

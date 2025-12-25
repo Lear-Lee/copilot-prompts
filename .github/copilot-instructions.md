@@ -186,6 +186,39 @@ logger.debug('详细调试信息'); // 调试信息（仅在 DEBUG 模式）
 
 **在编写任何代码、文档或配置前，必须先调用 MCP 工具加载相关规范！**
 
+### 📦 模板应用指令
+
+当用户说出以下指令时，按照模板系统规范执行：
+
+**触发词**：
+- "将 xx 模板应用到 xx 项目"
+- "把 api/axios 模板复制到 xx"
+- "给 xx 项目配置 API 层"
+
+**执行流程**：
+
+1. **识别模板**：
+   | 关键词 | 模板路径 |
+   |--------|----------|
+   | axios / api / 请求封装 | `templates/vue/api-layer/` |
+   | types / 类型 | `templates/common/types/` |
+
+2. **确定目标**：
+   | 模板 | 目标路径 |
+   |------|----------|
+   | vue/api-layer | `{项目}/src/api/` |
+   | common/types | `{项目}/src/types/` |
+
+3. **复制文件**：排除 `_CONFIG.md`，复制其他所有文件
+
+4. **提示配置**：告知用户需调整的配置项（参考 `_CONFIG.md`）
+
+**模板位置**：`/Users/pailasi/Work/copilot-prompts/templates/`
+
+详细说明：[templates/README.md](../templates/README.md)
+
+---
+
 #### 开发 Agent 时
 
 - 编写新 Agent → `get_relevant_standards({ scenario: "Agent 开发" })`
