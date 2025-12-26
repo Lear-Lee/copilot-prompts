@@ -17,6 +17,7 @@ import { autoSetup } from './tools/autoSetup.js';
 import { getSmartStandards } from './tools/getSmartStandards.js';
 import { usePreset, listPresets } from './tools/usePreset.js';
 import { healthCheck } from './tools/healthCheck.js';
+import { getCompactStandards } from './tools/getCompactStandards.js';
 import { StandardsManager } from './core/standardsManager.js';
 import { CodeValidator } from './core/codeValidator.js';
 
@@ -269,8 +270,35 @@ class CopilotPromptsMCPServer {
           },
         },
         {
+          name: 'get_compact_standards',
+          description: '🚀 Token 优化版规范获取。支持三种模式：summary(~500 tokens)仅返回规范列表、key-rules(~2000 tokens)返回关键规则摘要、full(完整内容)。默认 key-rules 模式，比完整加载节省 80%+ token。',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              currentFile: {
+                type: 'string',
+                description: '当前文件路径（可选）',
+              },
+              fileContent: {
+                type: 'string',
+                description: '文件内容（可选，用于分析）',
+              },
+              scenario: {
+                type: 'string',
+                description: '开发场景（可选）',
+              },
+              mode: {
+                type: 'string',
+                enum: ['summary', 'key-rules', 'full'],
+                description: '返回模式：summary(~500 tokens)、key-rules(~2000 tokens，默认)、full(完整内容)',
+                default: 'key-rules',
+              },
+            },
+          },
+        },
+        {
           name: 'get_relevant_standards',
-          description: '根据当前开发上下文，获取相关的编码规范。支持自动检测导入、关键词匹配。按需加载，减少 token 消耗 50-70%。',
+          description: '根据当前开发上下文，获取相关的编码规范（完整内容）。如需节省 token，请使用 get_compact_standards。',
           inputSchema: {
             type: 'object',
             properties: {
@@ -345,6 +373,9 @@ class CopilotPromptsMCPServer {
 
           case 'generate_config':
             return await generateConfig(args as any);
+
+          case 'get_compact_standards':
+            return await getCompactStandards(args as any);
 
           case 'get_relevant_standards':
             return this.getRelevantStandards(args as any);
