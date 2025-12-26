@@ -3,7 +3,18 @@
 # Copilot Prompts 自动配置脚本
 # 用途：分析项目并自动生成/应用编码规范
 # 维护者：MTA团队（蘑菇与吐司的AI团队）
-# 版本：v1.5.0 (v1.1.0 更新：代码质量保障)
+# 版本：v1.6.0
+# 更新日志：
+#   v1.6.0 (2025-12-26): 新增 CSS 样式规范、工具类支持、内联样式禁止规则
+#   v1.5.0: 强制执行检查点、作用域限制
+#   v1.1.0: 代码质量保障
+#
+# 同步说明：
+#   每次 mcp-server build 后，此脚本中的规范引导内容应与 standards/ 目录保持同步
+#   主要同步点：
+#   - 技术栈规范章节（Vue、TypeScript、Element Plus、CSS 等）
+#   - MCP 工具调用示例
+#   - 强制工作流说明
 
 set -e
 
@@ -420,11 +431,12 @@ EOF
 1. **Vue 文件** → `get_relevant_standards({ fileType: "vue" })`
 2. **TypeScript 文件** → `get_relevant_standards({ fileType: "ts" })`
 3. **React 组件** → `get_relevant_standards({ fileType: "tsx" })`
-4. **使用特定库时**：
+4. **CSS/样式文件** → `get_relevant_standards({ scenario: "CSS 样式" })`
+5. **使用特定库时**：
    - Element Plus: `get_relevant_standards({ imports: ["element-plus"] })`
    - Pinia: `get_relevant_standards({ imports: ["pinia"] })`
    - Vue Router: `get_relevant_standards({ imports: ["vue-router"] })`
-5. **特定场景**：
+6. **特定场景**：
    - API 调用: `get_relevant_standards({ scenario: "API 调用" })`
    - 国际化: `get_relevant_standards({ scenario: "国际化" })`
 
@@ -448,6 +460,17 @@ EOF
 - **文件类型**: `.vue`
 - **规范加载**: `get_relevant_standards({ fileType: "vue" })`
 - **核心要求**: Composition API、TypeScript、响应式最佳实践
+
+### CSS 样式规范
+
+- **规范加载**: `get_relevant_standards({ scenario: "CSS 样式" })`
+- **核心要求**:
+  - 禁止内联样式 `style="..."`，使用 CSS 类替代
+  - Vue 组件使用嵌套 CSS 语法
+  - 全局样式使用标准 CSS 语法（带 `:`、`;`、`{}`）
+  - 通用样式必须通过父容器（如 `.el-form-item`）限定作用域
+  - 避免直接选择 `.el-input`、`.el-select` 等基础组件，防止影响复合组件内部布局
+  - 可使用工具类：`.ml_8`、`.mr_16`、`.w_180`、`.mt_16` 等
 
 EOF
     fi

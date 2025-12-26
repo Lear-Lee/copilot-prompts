@@ -446,6 +446,7 @@ const { count } = reactive({ count: 0 })  // 失去响应式
 5. **禁止内联样式**: 始终使用 scoped CSS 或 class
 6. **类型安全**: Props/Emits 必须有 TypeScript 类型
 7. **响应式陷阱**: 避免解构 reactive,避免重新赋值 reactive
+8. **CSS 嵌套写法**: 必须使用原生 CSS 嵌套语法，详见 [Vue CSS 嵌套规范](../patterns/vue-css-nesting.md)
 
 ---
 

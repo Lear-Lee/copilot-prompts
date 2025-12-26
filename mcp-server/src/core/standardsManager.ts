@@ -421,8 +421,21 @@ export class StandardsManager {
     // 国际化场景
     if (normalized.includes('i18n') || normalized.includes('translate') ||
         normalized.includes('国际化') || normalized.includes('翻译') ||
-        normalized.includes('locale')) {
+        normalized.includes('locale') || normalized.includes('多语言') ||
+        normalized.includes('messages.ts') || normalized.includes('$t(')) {
       this.addScore(scores, 'standards://libraries/i18n', weights.SCENARIO);
+    }
+    
+    // Vue CSS 嵌套场景
+    if (normalized.includes('css') || normalized.includes('样式') ||
+        normalized.includes('style') || normalized.includes('scoped') ||
+        normalized.includes('嵌套') || normalized.includes('nesting') ||
+        normalized.includes('内联') || normalized.includes('inline') ||
+        normalized.includes('工具类') || normalized.includes('utilities') ||
+        normalized.includes('.ml_') || normalized.includes('.mr_') ||
+        normalized.includes('.mt_') || normalized.includes('.mb_') ||
+        normalized.includes('.w_') || normalized.includes(':deep(')) {
+      this.addScore(scores, 'standards://patterns/vue-css-nesting', weights.SCENARIO);
     }
     
     // 微信小程序场景
@@ -485,8 +498,20 @@ export class StandardsManager {
     
     // i18n 关键词
     if (normalized.includes('$t(') || normalized.includes('t(\'') ||
-        normalized.includes('usei18n') || normalized.includes('locale')) {
+        normalized.includes('usei18n') || normalized.includes('locale') ||
+        normalized.includes('messages.ts') || normalized.includes('localestore') ||
+        normalized.includes('setlocale') || normalized.includes('togglelocale')) {
       this.addScore(scores, 'standards://libraries/i18n', weights.CONTENT);
+    }
+    
+    // Vue CSS 嵌套关键词
+    if (normalized.includes('<style scoped>') || normalized.includes('&:hover') ||
+        normalized.includes('&.active') || normalized.includes('&::before') ||
+        normalized.includes(':deep(') || normalized.includes(':global(') ||
+        normalized.includes('style="') || normalized.includes('class="ml_') ||
+        normalized.includes('class="mr_') || normalized.includes('class="mt_') ||
+        normalized.includes('class="w_')) {
+      this.addScore(scores, 'standards://patterns/vue-css-nesting', weights.CONTENT);
     }
     
     // 微信小程序关键词
@@ -615,7 +640,9 @@ export class StandardsManager {
       },
       patterns: {
         'api-layer': 'API 层设计',
-        'component-design': '组件设计模式'
+        'component-design': '组件设计模式',
+        'vue-css-nesting': 'Vue CSS 嵌套写法',
+        'vue-api-mock-layer': 'Vue API Mock 层'
       }
     };
     
@@ -645,7 +672,9 @@ export class StandardsManager {
       },
       patterns: {
         'api-layer': 'Axios 配置、API 模块化、错误处理',
-        'component-design': '组件通信、Props 验证、性能优化'
+        'component-design': '组件通信、Props 验证、性能优化',
+        'vue-css-nesting': '原生嵌套语法、伪类伪元素、深度选择器',
+        'vue-api-mock-layer': 'Axios封装、Mock数据、模块化API'
       }
     };
     

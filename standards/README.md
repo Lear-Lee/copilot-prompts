@@ -95,6 +95,8 @@ standards/
 |------|------|--------|
 | api-layer.md | API 调用 | API, axios, request |
 | component-design.md | 组件设计 | component, props, emit |
+| vue-css-nesting.md | Vue CSS 嵌套写法 | style, css, scoped |
+| vue-api-mock-layer.md | Vue API Mock 层 | mock, api |
 
 ### Workflows (工作流规范)
 根据项目规模和场景触发
