@@ -533,6 +533,8 @@ class HomePage extends StatelessWidget {
 | Row 内 Gap 间距无效 | #6 Gap 方向错误 | `SizedBox(width:)` 或 `Gap.h()` |
 | **SVG 颜色比设计稿浅** | #7 ColorFilter 覆盖 | **移除 ColorFilter，保留 SVG 原有样式** |
 | **SVG 图标未居中** | #8 viewBox 不匹配 | **SVG viewBox 与使用尺寸一致** |
+| **TabBar 选中/未选中布局不符** | #9 两态布局差异 | **从 Sketch 提取精确坐标，分别计算两态布局** |
+| **切换动画不同步** | #9 颜色变化太快 | **使用 TweenAnimationBuilder 同步动画** |
 
 ### 效率优化：减少对话轮次
 
@@ -554,6 +556,90 @@ class HomePage extends StatelessWidget {
 2. **一次性生成**：基于提取结果直接生成完整的 Flutter 代码
 3. **不做二次确认**：除非用户反馈问题，否则不主动询问
 4. **问题优先检查速查表**：遇到问题先查速查表，避免重复踩坑
+
+### TabBar/导航栏动画还原规范
+
+> ⚠️ **重要**: 选中态和未选中态的布局参数往往不同，必须分别提取
+
+#### 必须提取的参数
+
+```javascript
+// Sketch 脚本：提取 TabBar 所有元素精确坐标
+const sketch = require('sketch')
+const document = sketch.getSelectedDocument()
+const page = document.selectedPage
+
+function extractTabBarLayout(frameName) {
+  const frame = sketch.find(`[name="${frameName}"]`, page)[0]
+  if (!frame) return console.log('Frame not found')
+  
+  function traverse(layer, depth = 0) {
+    const f = layer.frame
+    // 只打印 TabBar 区域
+    if (f.y > 750 || (layer.parent?.frame?.y > 750)) {
+      console.log(`${layer.type}: ${layer.name} x:${f.x} y:${f.y} w:${f.width} h:${f.height}`)
+    }
+    layer.layers?.forEach(child => traverse(child, depth + 1))
+  }
+  traverse(frame)
+}
+
+extractTabBarLayout('汇款记录') // 或其他包含 TabBar 的 Frame
+```
+
+#### 两态布局计算模板
+
+```dart
+// Sketch 参数（示例）:
+// TabBar: y=761, h=83
+// 绿色背景块: y=761, 44x44
+// 选中图标: y=771, 22x22 (距 TabBar 顶部 10px, 居中于背景块)
+// 未选中图标: y=773, 22x22 (距 TabBar 顶部 12px)
+// 选中文字: y=809 (距 TabBar 顶部 48px)
+// 未选中文字: y=799 (距 TabBar 顶部 38px)
+
+// 计算公式:
+// 选中: top=0, iconContainer=44, gap=4 → 文字位置 0+44+4=48 ✓
+// 未选中: top=12, iconContainer=22, gap=4 → 文字位置 12+22+4=38 ✓
+
+final double topMargin = isSelected ? 0.0 : 12.0;
+final double iconContainerHeight = isSelected ? 44.0 : iconSize;
+final double gap = 4.0;
+```
+
+#### 动画同步规范
+
+```dart
+// ❌ 错误：颜色使用 setState 立即切换，背景块使用 AnimatedPositioned
+// 结果：颜色变化太快，背景块还没移动过去图标已经变白
+
+// ✅ 正确：所有动画使用相同的 duration 和 curve
+const animDuration = Duration(milliseconds: 300);
+const animCurve = Curves.easeInOut;
+
+// 背景块动画
+AnimatedPositioned(
+  duration: animDuration,
+  curve: animCurve,
+  left: targetLeft,
+  child: greenBackground,
+)
+
+// 颜色动画（同步）
+TweenAnimationBuilder<Color?>(
+  duration: animDuration,
+  curve: animCurve,
+  tween: ColorTween(end: targetColor),
+  builder: (_, color, __) => Icon(color: color),
+)
+
+// 布局动画（同步）
+AnimatedContainer(
+  duration: animDuration,
+  curve: animCurve,
+  height: targetHeight,
+)
+```
 
 ---
 
