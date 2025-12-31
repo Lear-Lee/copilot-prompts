@@ -408,6 +408,115 @@ Container(
 6. ❌ **禁止忽略透明度** - 颜色 `#RRGGBBAA` 最后两位是透明度，必须解析
 7. ❌ **禁止 ColorFilter 覆盖 SVG** - 除非明确需要改变颜色，否则保留原有样式
 
+### 最小修改原则（重要！）
+
+> ⚠️ **每次修改必须遵循最小影响范围原则**
+
+#### 核心原则
+
+1. **最小单元修改** - 修改内容以最小单元为单位，不要影响其他功能
+2. **组件抽象优先** - 能抽象成公用组件就不要在单页面内直接写功能
+3. **独占性判断** - 还原设计稿时要考虑某些内容是否当前界面独占
+
+#### 修改前必须判断
+
+| 判断项 | 是 → 做法 | 否 → 做法 |
+|--------|----------|----------|
+| 该元素是否只在当前页面使用？ | 可以写在页面内 | **必须抽象为公共组件** |
+| 修改是否会影响其他页面？ | **停止，重新评估方案** | 继续修改 |
+| 该样式是否全局通用？ | 添加到 Token/Theme | 使用局部样式 |
+| 该功能是否可能被复用？ | **抽象为 Widget/Composable** | 可以内联实现 |
+
+#### 组件抽象决策树
+
+```
+还原设计稿元素
+    │
+    ├── 该元素在其他页面出现？
+    │       ├── 是 → 抽象到 lib/presentation/widgets/common/
+    │       └── 否 → 继续判断 ↓
+    │
+    ├── 该元素是页面的核心功能？
+    │       ├── 是 → 抽象到 lib/presentation/widgets/{feature}/
+    │       └── 否 → 继续判断 ↓
+    │
+    ├── 该元素超过 50 行代码？
+    │       ├── 是 → 抽象为私有 Widget（_XxxWidget）
+    │       └── 否 → 可以内联在页面中
+    │
+    └── 该元素有交互状态？
+            ├── 是 → 考虑抽象为独立 StatefulWidget
+            └── 否 → 可以作为 build 方法的一部分
+```
+
+#### 文件组织规范
+
+```
+lib/presentation/
+├── widgets/
+│   ├── common/                    # 全局通用组件
+│   │   ├── app_currency_selector.dart  # ✅ 多页面使用
+│   │   ├── app_bottom_nav_bar.dart     # ✅ 全局导航
+│   │   └── app_card.dart               # ✅ 通用卡片
+│   │
+│   ├── home/                      # 首页专用组件
+│   │   ├── rate_card.dart              # ✅ 首页汇率卡片
+│   │   └── quick_actions.dart          # ✅ 首页快捷操作
+│   │
+│   └── calculator/                # 计算器专用组件
+│       └── currency_input.dart         # ✅ 计算器输入框
+│
+└── pages/
+    └── home/
+        └── home_page.dart         # ❌ 不要在这里写大量组件代码
+```
+
+#### 示例对比
+
+```dart
+// ❌ 错误 - 在页面内直接写大量组件代码
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 100+ 行的汇率卡片代码直接写在这里
+        Container(
+          decoration: BoxDecoration(...),
+          child: Column(
+            children: [
+              // ... 大量嵌套代码
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ✅ 正确 - 抽象为独立组件
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const RateCard(),  // 组件在 widgets/home/rate_card.dart
+      ],
+    );
+  }
+}
+```
+
+#### 修改检查清单
+
+每次修改前必须确认：
+
+- [ ] 该修改是否只影响目标功能？
+- [ ] 是否有其他页面使用相同元素？（搜索项目）
+- [ ] 修改后是否需要同步更新其他地方？
+- [ ] 是否应该抽象为公共组件而非内联实现？
+- [ ] 组件放置位置是否正确？（common / feature / page）
+
 ### 问题速查表（优先检查）
 
 > ⚠️ **修改代码前，先检查是否属于已知问题类型**
