@@ -520,6 +520,8 @@ class HomePage extends StatelessWidget {
 ### 问题速查表（优先检查）
 
 > ⚠️ **修改代码前，先检查是否属于已知问题类型**
+> 
+> 📄 **详细方案**: `docs/还原样式总结/纠错历史.md` 和 `docs/还原样式总结/纠错历史（详细）.md`
 
 | 问题特征 | 问题 ID | 快速方案 |
 |----------|---------|----------|
@@ -1038,6 +1040,13 @@ void fetchData() async {
 - [Effective Dart](https://dart.dev/effective-dart)
 - [Flutter Style Guide](https://github.com/flutter/flutter/blob/main/docs/contributing/Style-guide-for-Flutter-repo.md)
 - [Flutter Performance Best Practices](https://flutter.dev/docs/perf/best-practices)
+
+### my_flutter 项目文档
+- `docs/还原样式总结/纠错历史.md` - 问题速查表
+- `docs/还原样式总结/纠错历史（详细）.md` - 详细解决方案
+- `docs/还原样式总结/登录页输入框新拟态阴影修复.md` - 阴影透出问题
+- `docs/还原样式总结/首页选项卡新拟态还原.md` - 内阴影裁剪问题
+- `docs/UI_RESTORATION_GUIDE.md` - 响应式 UI 还原指南
 
 ### 学习资源
 - [Flutter YouTube Channel](https://www.youtube.com/c/flutterdev)
