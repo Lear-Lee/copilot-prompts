@@ -138,6 +138,215 @@ Container(color: $c.primary, padding: EdgeInsets.all($s.md))
 
 ---
 
+## 🎨 Sketch 设计稿还原规范（核心）
+
+> ⚠️ **此章节为强制执行规范** - 所有 UI 还原任务必须严格遵循
+
+### 问题根源分析
+
+过去还原设计稿时存在以下问题导致效率低下：
+
+| 问题 | 表现 | 根因 |
+|------|------|------|
+| 属性读取不完整 | 漏读渐变、圆角、阴影参数 | 只读取部分属性 |
+| 假设而非验证 | 假设圆形/颜色/图标 | 未从设计稿验证 |
+| 使用近似值 | 用 Material Icons 代替 | 未导出原始 SVG |
+| 分散查询 | 多轮对话才获取完整信息 | 每次只查一个属性 |
+
+### 强制执行：一次性完整提取
+
+**在还原任何 UI 元素前，必须使用以下脚本一次性提取所有属性：**
+
+```javascript
+// 完整样式提取脚本 - 必须使用此脚本
+const sketch = require('sketch');
+const document = sketch.getSelectedDocument();
+const page = document.selectedPage;
+
+function extractFullStyle(layerName) {
+  const layer = sketch.find(`[name="${layerName}"]`, page)[0];
+  if (!layer) return console.log(`Layer "${layerName}" not found`);
+
+  console.log('=== 基本信息 ===');
+  console.log(`Name: ${layer.name} (${layer.type})`);
+  console.log(`Frame: ${layer.frame.width}x${layer.frame.height} @ (${layer.frame.x}, ${layer.frame.y})`);
+
+  const style = layer.style;
+
+  // 1. 填充（颜色/渐变）
+  console.log('=== 填充 ===');
+  if (style.fills?.length) {
+    style.fills.forEach((fill, i) => {
+      console.log(`Fill ${i}: Type=${fill.fillType}, Enabled=${fill.enabled}`);
+      if (fill.fillType === 'Color') {
+        console.log(`  Color: ${fill.color}`);
+      } else if (fill.fillType === 'Gradient') {
+        console.log(`  Gradient: ${fill.gradient.gradientType}`);
+        console.log(`  From: (${fill.gradient.from.x.toFixed(2)}, ${fill.gradient.from.y.toFixed(2)})`);
+        console.log(`  To: (${fill.gradient.to.x.toFixed(2)}, ${fill.gradient.to.y.toFixed(2)})`);
+        fill.gradient.stops.forEach((stop, j) => {
+          console.log(`  Stop ${j}: ${stop.color} @ ${stop.position}`);
+        });
+      }
+    });
+  } else {
+    console.log('No fills');
+  }
+
+  // 2. 边框
+  console.log('=== 边框 ===');
+  if (style.borders?.length) {
+    style.borders.forEach((border, i) => {
+      console.log(`Border ${i}: Color=${border.color}, Width=${border.thickness}, Position=${border.position}, Enabled=${border.enabled}`);
+    });
+  } else {
+    console.log('No borders');
+  }
+
+  // 3. 阴影
+  console.log('=== 阴影 ===');
+  if (style.shadows?.length) {
+    style.shadows.forEach((s, i) => {
+      console.log(`Shadow ${i}: Color=${s.color}, Offset=(${s.x}, ${s.y}), Blur=${s.blur}, Spread=${s.spread}`);
+    });
+  } else {
+    console.log('No shadows');
+  }
+
+  // 4. 内阴影
+  console.log('=== 内阴影 ===');
+  if (style.innerShadows?.length) {
+    style.innerShadows.forEach((s, i) => {
+      console.log(`InnerShadow ${i}: Color=${s.color}, Offset=(${s.x}, ${s.y}), Blur=${s.blur}, Spread=${s.spread}`);
+    });
+  } else {
+    console.log('No inner shadows');
+  }
+
+  // 5. 圆角
+  console.log('=== 圆角 ===');
+  if (layer.layers?.[0]?.points) {
+    const points = layer.layers[0].points;
+    const radii = points.map(p => p.cornerRadius);
+    const allSame = radii.every(r => r === radii[0]);
+    if (allSame) {
+      console.log(`CornerRadius: ${radii[0]} (all corners)`);
+    } else {
+      console.log(`CornerRadius: [${radii.join(', ')}] (TL, TR, BR, BL)`);
+    }
+  } else if (layer.points) {
+    const radii = layer.points.map(p => p.cornerRadius);
+    console.log(`CornerRadius: ${radii[0]}`);
+  } else {
+    console.log('No corner radius (circle or custom shape)');
+  }
+
+  // 6. 不透明度
+  console.log('=== 不透明度 ===');
+  console.log(`Opacity: ${style.opacity}`);
+
+  // 7. 子元素（如果是 Group）
+  if (layer.layers?.length) {
+    console.log('=== 子元素 ===');
+    layer.layers.forEach(child => {
+      console.log(`- ${child.name} (${child.type}): ${child.frame.width}x${child.frame.height}`);
+    });
+  }
+}
+
+// 使用: extractFullStyle('Layer Name');
+extractFullStyle('Message Button');
+```
+
+### 图标还原：必须导出 SVG
+
+**禁止使用 Material Icons 或其他近似图标，必须从 Sketch 导出原始 SVG：**
+
+```javascript
+// 导出图标 SVG
+const sketch = require('sketch');
+const layer = sketch.find('[name="Icon Name"]', sketch.getSelectedDocument().selectedPage)[0];
+if (layer) {
+  const svg = sketch.export(layer, { formats: 'svg', output: false });
+  console.log(svg.toString());
+}
+```
+
+然后使用 `CustomPainter` 绘制 SVG Path，而非使用近似图标。
+
+### 还原检查清单（强制）
+
+在还原任何 UI 元素前，必须确认以下所有属性：
+
+| 属性 | 检查项 | Flutter 对应 |
+|------|--------|--------------|
+| **尺寸** | width, height | `width`, `height` |
+| **填充类型** | Color / Gradient / Image | `color` / `gradient` / `DecorationImage` |
+| **渐变细节** | stops, from, to, type | `LinearGradient`, `RadialGradient` |
+| **圆角** | cornerRadius (4个角) | `borderRadius` / `BoxShape.circle` |
+| **阴影** | color, x, y, blur, spread | `boxShadow: [BoxShadow(...)]` |
+| **内阴影** | 同上 | 需要特殊处理（Flutter 不原生支持） |
+| **边框** | color, thickness, position | `border: Border.all(...)` |
+| **不透明度** | opacity | `Opacity` widget 或颜色 alpha |
+| **图标** | SVG path, fill color | `CustomPainter` |
+
+### Flutter 代码生成模板
+
+提取完成后，按以下模板生成代码：
+
+```dart
+/// {组件名称} - Sketch: {尺寸} @ ({x}, {y})
+Container(
+  width: {width},
+  height: {height},
+  decoration: BoxDecoration(
+    // 填充 - Sketch: {填充类型}
+    gradient: LinearGradient(  // 或 color: Color(0xFF...),
+      begin: Alignment({fromX}, {fromY}),
+      end: Alignment({toX}, {toY}),
+      colors: [
+        Color(0xFF{stop1}),  // Sketch: #{stop1}
+        Color(0xFF{stop2}),  // Sketch: #{stop2}
+      ],
+    ),
+    // 圆角 - Sketch: {cornerRadius}
+    borderRadius: BorderRadius.circular({radius}),  // 或 shape: BoxShape.circle,
+    // 阴影 - Sketch: {shadow details}
+    boxShadow: [
+      BoxShadow(
+        color: Color(0x{alpha}{color}),  // Sketch: #{color}{alpha}
+        offset: Offset({x}, {y}),
+        blurRadius: {blur},
+        spreadRadius: {spread},
+      ),
+      // ... 其他阴影
+    ],
+    // 边框 - Sketch: {border details}
+    border: Border.all(
+      color: Color(0xFF{borderColor}),
+      width: {borderWidth},
+    ),
+  ),
+  child: {子元素},
+)
+```
+
+### 禁止事项
+
+1. ❌ **禁止假设形状** - 必须从设计稿读取 `cornerRadius`，不能假设是圆形
+2. ❌ **禁止假设颜色** - 必须读取完整的 `fills` 数组，检查 `fillType`
+3. ❌ **禁止使用近似图标** - 必须导出 SVG 并用 `CustomPainter` 绘制
+4. ❌ **禁止分散查询** - 必须使用完整提取脚本一次性获取所有属性
+5. ❌ **禁止遗漏阴影参数** - 必须读取 color, x, y, blur, spread 全部 5 个参数
+
+### 效率优化：一问一答原则
+
+1. **首次提问时**：立即运行完整样式提取脚本 + 图标 SVG 导出
+2. **一次性生成**：基于提取结果直接生成完整的 Flutter 代码
+3. **不做二次确认**：除非用户反馈问题，否则不主动询问
+
+---
+
 ## 📐 架构模式
 
 ### 推荐的项目结构
@@ -631,4 +840,4 @@ void fetchData() async {
 
 **维护团队**: MTA工作室  
 **创建日期**: 2025-12-16  
-**最后更新**: 2025-12-16
+**最后更新**: 2025-12-31
