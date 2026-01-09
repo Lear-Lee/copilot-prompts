@@ -1,10 +1,12 @@
 import * as fs from 'fs';
 import { StandardsManager } from '../core/standardsManager.js';
 import { ConsoleLogger } from '../core/types.js';
+import { AutoInitializer } from '../core/autoInitializer.js';
 
 /**
  * 智能规范推荐工具
  * 零参数，自动检测上下文并推荐规范
+ * v1.9.0: 集成自动项目配置检测
  */
 export async function getSmartStandards(args: {
     currentFile?: string;
@@ -14,8 +16,26 @@ export async function getSmartStandards(args: {
 }> {
     const logger = new ConsoleLogger();
     const manager = new StandardsManager();
+    const autoInit = new AutoInitializer(logger);
     
     try {
+        // ✨ 新增：自动检测并初始化项目配置
+        const initResult = await autoInit.ensureProjectConfig();
+        
+        if (initResult.needsInit) {
+            logger.log('📋 ' + initResult.message);
+            
+            // 如果初始化成功，提示用户
+            if (initResult.initialized) {
+                return {
+                    content: [{
+                        type: 'text',
+                        text: `🎉 **首次使用自动配置完成**\n\n${initResult.message}\n\n现在可以继续使用 @mta 进行开发了！\n\n💡 提示：项目配置文件已生成在 .github/copilot-instructions.md`
+                    }]
+                };
+            }
+        }
+        
         let detectedFileType = 'unknown';
         let detectedImports: string[] = [];
         let detectedScenario = '';
