@@ -72,8 +72,14 @@ export class StandardsManager {
   };
   
   constructor() {
-    // 标准规范目录路径（相对于 mcp-server/build）
-    this.standardsPath = path.resolve(__dirname, '../../../standards');
+    // 标准规范目录路径
+    // 开发环境: mcp-server/build/core -> copilot-prompts/standards
+    // npm 包环境: node_modules/mta-mcp/build/core -> node_modules/mta-mcp/standards
+    const devPath = path.resolve(__dirname, '../../../standards');
+    const npmPath = path.resolve(__dirname, '../../standards');
+    
+    // 优先使用 npm 包内的路径，如果不存在则使用开发路径
+    this.standardsPath = fs.existsSync(npmPath) ? npmPath : devPath;
   }
   
   /**

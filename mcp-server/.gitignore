@@ -3,3 +3,8 @@ build/
 *.log
 .DS_Store
 .env
+
+# 从父目录复制的文件（npm 打包时自动包含）
+standards/
+agents/
+common/

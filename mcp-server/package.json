@@ -1,12 +1,19 @@
 {
   "name": "mta-mcp",
-  "version": "1.8.1",
+  "version": "1.8.3",
   "description": "MTA - 智能项目分析与编码规范管理 MCP 服务器",
   "type": "module",
   "main": "build/index.js",
   "bin": {
     "mta": "build/index.js"
   },
+  "files": [
+    "build/",
+    "src/",
+    "standards/",
+    "agents/",
+    "common/"
+  ],
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
