@@ -1,11 +1,11 @@
 {
-  "name": "copilot-prompts-mcp-server",
-  "version": "1.8.0",
-  "description": "智能项目分析与编码规范管理 MCP 服务器（v1.3.0: 注释与文档生成规范 + v1.2.0: 底层核心规范强制加载 + v1.1.0: 代码质量保障）",
+  "name": "mta-mcp",
+  "version": "1.8.1",
+  "description": "MTA - 智能项目分析与编码规范管理 MCP 服务器",
   "type": "module",
   "main": "build/index.js",
   "bin": {
-    "mta-mcp": "build/index.js"
+    "mta": "build/index.js"
   },
   "scripts": {
     "build": "tsc",
