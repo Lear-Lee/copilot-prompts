@@ -18,10 +18,12 @@ import { getSmartStandards } from './tools/getSmartStandards.js';
 import { usePreset, listPresets } from './tools/usePreset.js';
 import { healthCheck } from './tools/healthCheck.js';
 import { getCompactStandards } from './tools/getCompactStandards.js';
+import { getStandardById } from './tools/getStandardById.js';
+import { queryMappings, listScenarios } from './tools/queryMappings.js';
 import { StandardsManager } from './core/standardsManager.js';
 import { CodeValidator } from './core/codeValidator.js';
 
-const SERVER_VERSION = '1.7.0'; // v1.3.0 更新
+const SERVER_VERSION = '2.0.0'; // v2.0.0 设计理念调整：MCP = 信息提供者，AI = 决策者
 
 /**
  * Copilot Prompts MCP Server
@@ -335,6 +337,64 @@ class CopilotPromptsMCPServer {
             },
           },
         },
+        {
+          name: 'get_standard_by_id',
+          description: '📖 按 ID 直接获取规范。AI 知道需要什么规范时，直接按 ID 获取，最简洁高效。支持三种模式：summary(摘要)、key-rules(关键规则，默认)、full(完整内容)。',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              id: {
+                type: 'string',
+                description: '规范 ID（如 vue3-composition, element-plus, pinia）',
+              },
+              ids: {
+                type: 'array',
+                items: { type: 'string' },
+                description: '多个规范 ID，批量获取',
+              },
+              mode: {
+                type: 'string',
+                enum: ['summary', 'key-rules', 'full'],
+                description: '加载模式：summary(摘要)、key-rules(关键规则，默认)、full(完整内容)',
+                default: 'key-rules',
+              },
+            },
+          },
+        },
+        {
+          name: 'query_mappings',
+          description: '🗺️ 查询场景-规范映射关系。提供映射信息给 AI 参考，AI 自己决定使用哪些规范。不做"智能推荐"，只提供数据查询。',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              scenario: {
+                type: 'string',
+                description: '场景名称（如 vue3-form, api-call, pinia-store）',
+              },
+              fileType: {
+                type: 'string',
+                description: '文件类型（如 vue, ts, tsx）',
+              },
+              imports: {
+                type: 'array',
+                items: { type: 'string' },
+                description: '导入的包（如 element-plus, pinia）',
+              },
+              listAll: {
+                type: 'boolean',
+                description: '列出所有映射关系',
+              },
+            },
+          },
+        },
+        {
+          name: 'list_scenarios',
+          description: '📋 列出所有可用的场景名称。AI 可使用这些场景名称调用 use_preset 或 query_mappings。',
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+        },
       ],
     }));
 
@@ -382,6 +442,15 @@ class CopilotPromptsMCPServer {
           
           case 'get_standards_stats':
             return this.getStandardsStats(args as any);
+
+          case 'get_standard_by_id':
+            return await getStandardById(args as any);
+
+          case 'query_mappings':
+            return await queryMappings(args as any);
+
+          case 'list_scenarios':
+            return await listScenarios();
 
           default:
             throw new Error(`未知工具: ${name}`);

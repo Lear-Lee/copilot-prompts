@@ -14,3 +14,6 @@ vscode-extension/*.vsix
 *.tmp
 *.bak
 *~
+
+# MCP 配置（本地）
+.vscode/mcp.json

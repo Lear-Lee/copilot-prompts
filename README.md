@@ -184,10 +184,12 @@ MCP 服务器提供以下智能工具：
 ## 📚 文档
 
 ### 新手入门
+- **[🚀 MCP 首次配置指南](docs/getting-started/MCP_FIRST_TIME_SETUP.md)** - **首次使用必读** ⭐
 - [快速开始指南](docs/getting-started/QUICK_START.md) - 5分钟上手 MCP
 - [MCP 配置自动生效指南](docs/getting-started/MCP_AUTO_RELOAD.md) - 让配置立即生效
 
 ### 使用指南
+- **[⚡ MCP Token 优化指南](docs/guides/MCP_TOKEN_OPTIMIZATION.md)** - **节省 95% token 消耗的秘诀** 🔥
 - [MCP 使用演示](docs/MCP_USAGE_DEMO.md) - 完整实战演示，从零到精通
 - [Agents 使用指南](docs/guides/AGENTS_GUIDE.md) - Custom Agents 指南
 - [最佳实践](docs/guides/BEST_PRACTICES.md) - 编码规范建议

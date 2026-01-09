@@ -1,7 +1,7 @@
 {
   "name": "mta-mcp",
-  "version": "1.9.0",
-  "description": "MTA - 智能项目分析与编码规范管理 MCP 服务器（v1.9.0: 首次使用自动配置）",
+  "version": "2.0.0",
+  "description": "MTA - 智能项目分析与编码规范管理 MCP 服务器（v2.0.0: 设计理念调整 - MCP = 信息提供者，AI = 决策者）",
   "type": "module",
   "main": "build/index.js",
   "bin": {
